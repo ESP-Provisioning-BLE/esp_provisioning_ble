@@ -167,13 +167,18 @@ class EspProv {
   }
 
   Future<bool> sendWifiConfig(
-      {required String ssid, required String password}) async {
+      {required String ssid, required String password, String? bssid}) async {
     var payload = WiFiConfigPayload();
     payload.msg = WiFiConfigMsgType.TypeCmdSetConfig;
 
     var cmdSetConfig = CmdSetConfig();
     cmdSetConfig.ssid = utf8.encode(ssid);
     cmdSetConfig.passphrase = utf8.encode(password);
+
+    if (bssid != null) {
+      cmdSetConfig.bssid = _encodeBssid(bssid);
+    }
+
     payload.cmdSetConfig = cmdSetConfig;
     var reqData = await security.encrypt(payload.writeToBuffer());
     var respData = await transport.sendReceive('prov-config', reqData);
@@ -255,7 +260,7 @@ class EspProv {
     return Uint8List.fromList(ret);
   }
 
-  /// Converts a binary BSSID to a hexadecimal string.
+  /// Decodes a binary BSSID  and convert it to a hexadecimal string.
   ///
   /// This function takes a [binaryBssid] as input, which is a list of integers
   /// representing the BSSID in binary format. It then converts each integer to
@@ -266,4 +271,14 @@ class EspProv {
   /// a MAC address.
   String _decodeBssid(List<int> binaryBssid) =>
       binaryBssid.map((e) => e.toRadixString(16)).toList().join(':');
+
+  /// Encodes a hexadecimal BSSID into its binary representation.
+  ///
+  /// This function takes a hexadecimal string as input, which is a string of hexadecimal
+  /// digits separated by colons. It then splits the string into a list of hexadecimal
+  /// digits and converts each digit back to its integer representation.
+  ///
+  /// The function returns a list of integers representing the binary BSSID.
+  List<int> _encodeBssid(String hexBssid) =>
+      hexBssid.split(':').map((e) => int.parse(e, radix: 16)).toList();
 }
