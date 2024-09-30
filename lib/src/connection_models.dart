@@ -26,12 +26,14 @@ class ConnectionStatus {
 
 class WifiAP {
   const WifiAP({
+    required this.bssid,
     required this.ssid,
     required this.rssi,
     this.active = false,
     this.private = true,
   });
 
+  final String bssid;
   final String ssid;
   final int rssi;
   final bool active;
