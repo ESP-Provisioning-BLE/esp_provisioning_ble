@@ -132,7 +132,7 @@ class EspProv {
 
       ret.add(WifiAP(
           ssid: utf8.decode(entry.ssid),
-          bssid: utf8.decode(entry.bssid),
+          bssid: _decodeBssid(entry.bssid),
           rssi: entry.rssi,
           private: entry.auth.toString() != 'Open'));
     }
@@ -254,4 +254,16 @@ class EspProv {
     }
     return Uint8List.fromList(ret);
   }
+
+  /// Converts a binary BSSID to a hexadecimal string.
+  ///
+  /// This function takes a [binaryBssid] as input, which is a list of integers
+  /// representing the BSSID in binary format. It then converts each integer to
+  /// its hexadecimal representation and joins them together with colons as separators.
+  ///
+  /// The function returns a hexadecimal string representation of the BSSID using colons
+  /// as separators. It is required because the representation of the BSSID is like
+  /// a MAC address.
+  String _decodeBssid(List<int> binaryBssid) =>
+      binaryBssid.map((e) => e.toRadixString(16)).toList().join(':');
 }
