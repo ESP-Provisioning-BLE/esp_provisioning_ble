@@ -227,7 +227,7 @@ class EspProv {
   }
 
   Future<Uint8List> sendReceiveCustomData(Uint8List data,
-      {int packageSize = 253}) async {
+      {int packageSize = 256}) async {
     var remainingData = data.length;
     var offset = 0;
     List<int> ret = [];
