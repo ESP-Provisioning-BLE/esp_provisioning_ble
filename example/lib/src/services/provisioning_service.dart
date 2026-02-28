@@ -33,8 +33,26 @@ enum ProvState {
 class ProvisioningService extends ChangeNotifier {
   final _logger = Logger();
 
+  final ProvTransport Function(BluetoothDevice) _createTransport;
+  final EspProv Function({
+    required ProvTransport transport,
+    required ProvSecurity security,
+  }) _createProv;
+
+  ProvisioningService({
+    ProvTransport Function(BluetoothDevice)? createTransport,
+    EspProv Function({
+      required ProvTransport transport,
+      required ProvSecurity security,
+    })? createProv,
+  })  : _createTransport = createTransport ?? _defaultCreateTransport,
+        _createProv = createProv ?? EspProv.new;
+
+  static ProvTransport _defaultCreateTransport(BluetoothDevice device) =>
+      TransportBLE(device);
+
   EspProv? _prov;
-  TransportBLE? _transport;
+  ProvTransport? _transport;
   Timer? _statusTimer;
 
   ProvState _state = ProvState.idle;
@@ -60,7 +78,7 @@ class ProvisioningService extends ChangeNotifier {
   ) async {
     _setState(ProvState.connecting);
 
-    _transport = TransportBLE(device);
+    _transport = _createTransport(device);
     final connected = await _transport!.connect();
 
     if (!connected) {
@@ -69,7 +87,7 @@ class ProvisioningService extends ChangeNotifier {
       return;
     }
 
-    _prov = EspProv(
+    _prov = _createProv(
       transport: _transport!,
       security: Security1(pop: pop),
     );
