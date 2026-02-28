@@ -54,12 +54,14 @@ class BleScanner extends ChangeNotifier {
     }
   }
 
-  /// Starts scanning for BLE devices whose advertised name matches [prefix].
+  /// Starts scanning for BLE devices filtered by name.
   ///
-  /// Uses [FlutterBluePlus.startScan] with [withKeywords] to filter results
-  /// at the platform level. Results are deduplicated in Dart by remote ID.
+  /// Pass [withKeywords] for substring matching or [withNames] for exact
+  /// name matching. Both are forwarded directly to [FlutterBluePlus.startScan].
+  /// Results are deduplicated in Dart by remote ID.
   Future<void> startScan({
-    String prefix = 'PROV_',
+    List<String> withKeywords = const [],
+    List<String> withNames = const [],
     int timeout = 15,
   }) async {
     _devices = [];
@@ -98,12 +100,15 @@ class BleScanner extends ChangeNotifier {
     // Auto-cancel subscription when scan completes.
     FlutterBluePlus.cancelWhenScanComplete(_scanResultsSub!);
 
-    _logger.i('Starting BLE scan with prefix "$prefix" for ${timeout}s...');
+    _logger.i(
+      'Starting BLE scan for ${timeout}s '
+      '(keywords: $withKeywords, names: $withNames)...',
+    );
 
-    // withKeywords filters by advertised name at the FBP level.
     // continuousUpdates keeps the scan delivering results continuously.
     await FlutterBluePlus.startScan(
-      withKeywords: [prefix],
+      withKeywords: withKeywords,
+      withNames: withNames,
       timeout: Duration(seconds: timeout),
       continuousUpdates: true,
     );

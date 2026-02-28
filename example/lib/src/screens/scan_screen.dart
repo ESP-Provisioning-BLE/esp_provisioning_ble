@@ -4,8 +4,17 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../services/ble_scanner.dart';
 import '../widgets/device_list_tile.dart';
 
-/// Screen that scans for BLE devices matching a name prefix and displays
-/// them in a list. The user selects a device to proceed to connection.
+/// How the scan filter text is interpreted by flutter_blue_plus.
+enum ScanFilterMode {
+  /// Substring match — uses [FlutterBluePlus.startScan] `withKeywords`.
+  keywords,
+
+  /// Exact name match — uses [FlutterBluePlus.startScan] `withNames`.
+  names,
+}
+
+/// Screen that scans for BLE devices and displays them in a list.
+/// The user can choose between substring (keywords) or exact (names) filtering.
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
 
@@ -15,7 +24,8 @@ class ScanScreen extends StatefulWidget {
 
 class _ScanScreenState extends State<ScanScreen> {
   final _scanner = BleScanner();
-  final _prefixController = TextEditingController(text: 'PROV_');
+  final _filterController = TextEditingController(text: 'PROV_');
+  var _filterMode = ScanFilterMode.keywords;
   bool _autoScanStarted = false;
 
   @override
@@ -34,14 +44,20 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   void _startScan() {
-    _scanner.startScan(prefix: _prefixController.text);
+    final text = _filterController.text.trim();
+    switch (_filterMode) {
+      case ScanFilterMode.keywords:
+        _scanner.startScan(withKeywords: text.isEmpty ? [] : [text]);
+      case ScanFilterMode.names:
+        _scanner.startScan(withNames: text.isEmpty ? [] : [text]);
+    }
   }
 
   @override
   void dispose() {
     _scanner.removeListener(_onScannerUpdate);
     _scanner.dispose();
-    _prefixController.dispose();
+    _filterController.dispose();
     super.dispose();
   }
 
@@ -79,17 +95,42 @@ class _ScanScreenState extends State<ScanScreen> {
 
           return Column(
             children: [
-              // Prefix filter input
+              // Filter mode selector
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: SegmentedButton<ScanFilterMode>(
+                  segments: const [
+                    ButtonSegment(
+                      value: ScanFilterMode.keywords,
+                      label: Text('Keywords'),
+                      icon: Icon(Icons.search),
+                    ),
+                    ButtonSegment(
+                      value: ScanFilterMode.names,
+                      label: Text('Names'),
+                      icon: Icon(Icons.text_fields),
+                    ),
+                  ],
+                  selected: {_filterMode},
+                  onSelectionChanged: (selected) {
+                    setState(() => _filterMode = selected.first);
+                  },
+                ),
+              ),
+
+              // Filter text input + scan button
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     Expanded(
                       child: TextField(
-                        controller: _prefixController,
-                        decoration: const InputDecoration(
-                          labelText: 'Device name prefix',
-                          border: OutlineInputBorder(),
+                        controller: _filterController,
+                        decoration: InputDecoration(
+                          labelText: _filterMode == ScanFilterMode.keywords
+                              ? 'Device name keyword'
+                              : 'Exact device name',
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                       ),
