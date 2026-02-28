@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:esp_provisioning_ble/esp_provisioning_ble.dart';
 import 'package:flutter/foundation.dart';
