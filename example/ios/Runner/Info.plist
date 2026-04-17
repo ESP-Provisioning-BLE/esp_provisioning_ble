@@ -45,13 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- Bluetooth -->
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Your own description of the purpose.</string>
+	<string>This app uses Bluetooth to provision ESP32 devices.</string>
 	<key>UIBackgroundModes</key>
 	<array>
-	  <string>bluetooth-central</string>
+		<string>bluetooth-central</string>
 	</array>
-	<!-- Bluetooth -->
 </dict>
 </plist>

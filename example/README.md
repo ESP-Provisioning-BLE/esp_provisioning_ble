@@ -1,31 +1,75 @@
-# example
+# ESP32 BLE Provisioning Example
 
-"A new Flutter project."
+Example Flutter app demonstrating how to provision an ESP32 over BLE using
+[`esp_provisioning_ble`](https://pub.dev/packages/esp_provisioning_ble) and
+[`flutter_blue_plus`](https://pub.dev/packages/flutter_blue_plus).
 
-## Getting Started
+> Looking for the legacy example built with
+> [`flutter_ble_lib_ios_15`](https://github.com/davejlin/flutter_ble_lib_ios_15)?
+> See [`example_legacy/`](../example_legacy/).
 
-In this example, we used the [flutter_ble_lib_ios_15](https://github.com/davejlin/flutter_ble_lib_ios_15) as the BLE Flutter package.
+## Features
 
-If you are also using this library, please make the following changes to your application:
+- BLE device scanning with keyword (substring) or exact-name filtering
+- Secure session establishment (Curve25519 key exchange via Security1)
+- WiFi network scan through the ESP32
+- WiFi credential provisioning with connection status polling
+- Custom data exchange with the device
 
-1. Inside your `android/app/build.gradle` file, change the `minSdkVersion` to 21:
+## Requirements
 
-```gradle
-minSdkVersion 21
+### Android
+
+The following permissions are declared in `AndroidManifest.xml`:
+
+- `BLUETOOTH_SCAN`
+- `BLUETOOTH_CONNECT`
+- `ACCESS_FINE_LOCATION` (required for BLE scanning on most Android devices)
+
+The app requests `locationWhenInUse` at runtime before starting a scan.
+
+### iOS
+
+Add these keys to `Info.plist`:
+
+- `NSBluetoothAlwaysUsageDescription`
+- `NSBluetoothPeripheralUsageDescription` (iOS 12 and earlier)
+
+## Project Structure
+
+```
+lib/
+  main.dart                          App entry point and route table
+  src/
+    screens/
+      home_screen.dart               Start screen
+      scan_screen.dart               BLE device scanner with filter UI
+      connect_screen.dart            PoP entry and session establishment
+      wifi_screen.dart               WiFi scan, selection, and provisioning
+    services/
+      ble_scanner.dart               BLE scanning via flutter_blue_plus
+      provisioning_service.dart      Provisioning state machine (ChangeNotifier)
+      transport_ble.dart             ProvTransport implementation for FBP
+    widgets/
+      device_list_tile.dart          BLE device list item
+      wifi_list_tile.dart            WiFi network list item with signal icon
+      wifi_password_dialog.dart      Password entry dialog
 ```
 
-2. Inside your `android/build.gradle` file, update the `ext.kotlin_version` to 1.9.0:
+## Running
 
-```gradle
-ext.kotlin_version = '1.9.0'
+```bash
+cd example
+flutter pub get
+flutter run
 ```
 
-3. Inside your `android/app/src/main/AndroidManifest.xml` file, add the following `uses-permission`:
+## Tests
 
-```xml
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:minSdkVersion="29"/>
-<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"/>
-<uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:minSdkVersion="31" android:usesPermissionFlags="neverForLocation"/>
-<uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+```bash
+cd example
+flutter test
 ```
+
+Unit tests cover the provisioning service state machine, BLE scanner initial
+state, WiFi list tile signal icons, and the WiFi credentials data class.
