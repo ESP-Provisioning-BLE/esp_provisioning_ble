@@ -67,14 +67,14 @@ class ProvisioningService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Connects to the BLE device and establishes a secure provisioning session.
+  /// Connects to the BLE device and establishes a provisioning session.
   ///
-  /// Creates a [TransportBLE] adapter and [EspProv] instance with [Security1]
-  /// using the given proof-of-possession [pop]. The session establishment
-  /// performs a Curve25519 key exchange with the ESP32.
+  /// Creates a [TransportBLE] adapter and [EspProv] instance using the
+  /// provided [security] implementation. Pass [Security1] for an encrypted
+  /// session (Curve25519 key exchange) or [Security0] for an unencrypted one.
   Future<void> connectAndEstablishSession(
     BluetoothDevice device,
-    String pop,
+    ProvSecurity security,
   ) async {
     _setState(ProvState.connecting);
 
@@ -89,7 +89,7 @@ class ProvisioningService extends ChangeNotifier {
 
     _prov = _createProv(
       transport: _transport!,
-      security: Security1(pop: pop),
+      security: security,
     );
 
     _setState(ProvState.sessionEstablishing);
