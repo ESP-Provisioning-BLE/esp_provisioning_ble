@@ -54,6 +54,23 @@ void main() {
       expect(result, isNull);
     });
 
+    test('advances sessionState to finish', () async {
+      final sec = Security0();
+      await sec.securitySession(null); // step0Request
+      final response = SessionData()..secVer = SecSchemeVersion.SecScheme0;
+      await sec.securitySession(response);
+      expect(sec.sessionState, equals(Security0State.finish));
+    });
+
+    test('returns null when called again after handshake is complete', () async {
+      final sec = Security0();
+      await sec.securitySession(null); // step0Request
+      final response = SessionData()..secVer = SecSchemeVersion.SecScheme0;
+      await sec.securitySession(response); // step0Response -> finish
+      final result = await sec.securitySession(null); // idempotent
+      expect(result, isNull);
+    });
+
     test('throws when responseData is null', () async {
       final sec = Security0(sessionState: Security0State.step0Response);
       expect(

@@ -39,6 +39,10 @@ class Security0 implements ProvSecurity {
     }
     if (sessionState == Security0State.step0Response) {
       _processStep0Response(responseData);
+      sessionState = Security0State.finish;
+      return null;
+    }
+    if (sessionState == Security0State.finish) {
       return null;
     }
     throw Exception('Unexpected state');

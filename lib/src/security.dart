@@ -12,6 +12,7 @@ enum SecurityState {
 enum Security0State {
   step0Request,
   step0Response,
+  finish,
 }
 
 abstract class ProvSecurity {
