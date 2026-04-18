@@ -1,3 +1,32 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+From version 1.1.0 onwards this file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) conventions.
+Older entries below are preserved as originally written.
+
+## [1.1.0] - 2026-04-18
+
+### Added
+
+- `Security0` class implementing the no-encryption (`SecScheme0`) provisioning
+  handshake, for use with ESP32 firmware configured without encryption.
+- `Security0State` enum (`step0Request`, `step0Response`) tracking the
+  two-step Security0 session state machine.
+- Unit tests for `Security0`: encrypt/decrypt identity, state transitions,
+  correct protobuf output, and error handling in session response processing.
+- Security mode selector in the example app: users can choose between
+  Security0 (no encryption) and Security1 (encrypted) at the connect screen,
+  with the proof-of-possession field shown only when Security1 is selected.
+
+### Changed
+
+- `ProvSecurity.securitySession` parameter changed from `SessionData` to
+  `SessionData?` to reflect that the first call in a session has no prior
+  response to pass.
+
+---
+
 ## [1.0.0] - 11-24-2023 (November 24, 2023)
 
 #### Bug Fixes:
