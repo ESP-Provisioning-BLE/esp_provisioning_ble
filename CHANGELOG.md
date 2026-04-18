@@ -1,3 +1,23 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+From version 1.0.1 onwards this file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) conventions.
+Older entries below are preserved as originally written.
+
+## [1.0.1] - 2026-04-18
+
+### Fixed
+
+- `Security1.securitySession` now returns `null` instead of throwing
+  `'Unexpected state'` when called after the handshake has already
+  completed (`SecurityState.finish`). Previously, a defensive second
+  call to `EspProv.establishSession` on a reused instance was caught
+  internally and misreported as `EstablishSessionStatus.keymismatch`,
+  forcing consumers to disconnect and reconnect unnecessarily.
+
+---
+
 ## [1.0.0] - 11-24-2023 (November 24, 2023)
 
 #### Bug Fixes:
