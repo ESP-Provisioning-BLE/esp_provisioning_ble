@@ -29,6 +29,14 @@ Older entries below are preserved as originally written.
 
 - Corrected offset handling in `sendReceiveCustomData`, which was resending
   data from offset 0 on every chunk instead of advancing through the buffer.
+- BSSID bytes below `0x10` decoded to a single hex digit instead of two
+  (e.g. `"aa:5:cc:..."` instead of `"aa:05:cc:..."`), producing a string
+  that wasn't valid MAC notation. Scan entries with a BSSID that isn't
+  exactly 6 bytes are now treated as having no BSSID instead of decoding
+  whatever bytes are present.
+- `sendWifiConfig`'s `bssid` parameter now validates its format and throws
+  a clear `FormatException` on malformed input, instead of a confusing one
+  from deep inside `int.parse`.
 
 ## [1.0.0] - 11-24-2023 (November 24, 2023)
 
