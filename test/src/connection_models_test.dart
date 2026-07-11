@@ -88,8 +88,11 @@ void main() {
       // Not const: two identical const WifiAP literals would be
       // canonicalized to the same instance by the compiler, making this
       // pass via plain identity instead of exercising the fallback
-      // comparison in ==.
+      // comparison in ==. Ignoring prefer_const_constructors here on
+      // purpose: applying that fix would silently reintroduce the bug.
+      // ignore: prefer_const_constructors
       final ap1 = WifiAP(ssid: 'Net', rssi: -50);
+      // ignore: prefer_const_constructors
       final ap2 = WifiAP(ssid: 'Net', rssi: -50);
       expect(identical(ap1, ap2), isFalse);
       expect(ap1, equals(ap2));
