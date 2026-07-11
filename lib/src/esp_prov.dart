@@ -125,14 +125,9 @@ class EspProv {
     }
     List<WifiAP> ret = [];
     for (var entry in respPayload.respScanResult.entries) {
-      debugPrint('-----------------------');
-      debugPrint('Entry BSSID (only for development, remove when works):');
-      debugPrint('${entry.bssid}');
-      debugPrint('-----------------------');
-
       ret.add(WifiAP(
           ssid: utf8.decode(entry.ssid),
-          bssid: _decodeBssid(entry.bssid),
+          bssid: entry.bssid.isEmpty ? null : _decodeBssid(entry.bssid),
           rssi: entry.rssi,
           private: entry.auth.toString() != 'Open'));
     }
