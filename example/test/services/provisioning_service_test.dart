@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -45,8 +44,9 @@ void main() {
   group('connectAndEstablishSession', () {
     test('reaches sessionReady on successful connection', () async {
       when(() => mockTransport.connect()).thenAnswer((_) async => true);
-      when(() => mockProv.establishSession())
-          .thenAnswer((_) async => EstablishSessionStatus.connected);
+      when(
+        () => mockProv.establishSession(),
+      ).thenAnswer((_) async => EstablishSessionStatus.connected);
 
       final states = <ProvState>[];
       service.addListener(() => states.add(service.state));
@@ -72,34 +72,38 @@ void main() {
 
     test('reaches disconnected on session disconnect', () async {
       when(() => mockTransport.connect()).thenAnswer((_) async => true);
-      when(() => mockProv.establishSession())
-          .thenAnswer((_) async => EstablishSessionStatus.disconnected);
+      when(
+        () => mockProv.establishSession(),
+      ).thenAnswer((_) async => EstablishSessionStatus.disconnected);
 
       await service.connectAndEstablishSession(mockDevice, 'abcd1234');
 
       expect(service.state, ProvState.disconnected);
-      expect(service.errorMessage,
-          'Device disconnected during session establishment');
+      expect(
+        service.errorMessage,
+        'Device disconnected during session establishment',
+      );
     });
 
     test('reaches keyMismatch on key mismatch', () async {
       when(() => mockTransport.connect()).thenAnswer((_) async => true);
-      when(() => mockProv.establishSession())
-          .thenAnswer((_) async => EstablishSessionStatus.keymismatch);
+      when(
+        () => mockProv.establishSession(),
+      ).thenAnswer((_) async => EstablishSessionStatus.keymismatch);
 
       await service.connectAndEstablishSession(mockDevice, 'wrong');
 
       expect(service.state, ProvState.keyMismatch);
-      expect(
-          service.errorMessage, 'Wrong proof-of-possession (key mismatch)');
+      expect(service.errorMessage, 'Wrong proof-of-possession (key mismatch)');
     });
   });
 
   group('scanWifi', () {
     setUp(() {
       when(() => mockTransport.connect()).thenAnswer((_) async => true);
-      when(() => mockProv.establishSession())
-          .thenAnswer((_) async => EstablishSessionStatus.connected);
+      when(
+        () => mockProv.establishSession(),
+      ).thenAnswer((_) async => EstablishSessionStatus.connected);
     });
 
     test('populates wifiNetworks on success', () async {
@@ -130,15 +134,18 @@ void main() {
   group('sendConfig', () {
     setUp(() {
       when(() => mockTransport.connect()).thenAnswer((_) async => true);
-      when(() => mockProv.establishSession())
-          .thenAnswer((_) async => EstablishSessionStatus.connected);
+      when(
+        () => mockProv.establishSession(),
+      ).thenAnswer((_) async => EstablishSessionStatus.connected);
     });
 
     test('reaches success when poll returns Connected', () async {
-      when(() => mockProv.sendWifiConfig(
-            ssid: any(named: 'ssid'),
-            password: any(named: 'password'),
-          )).thenAnswer((_) async => true);
+      when(
+        () => mockProv.sendWifiConfig(
+          ssid: any(named: 'ssid'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => true);
       when(() => mockProv.applyWifiConfig()).thenAnswer((_) async => true);
       when(() => mockProv.getStatus()).thenAnswer(
         (_) async => ConnectionStatus(
@@ -159,12 +166,15 @@ void main() {
 
     test('sends custom data before wifi config', () async {
       final customResponse = Uint8List.fromList(utf8.encode('ok'));
-      when(() => mockProv.sendReceiveCustomData(any()))
-          .thenAnswer((_) async => customResponse);
-      when(() => mockProv.sendWifiConfig(
-            ssid: any(named: 'ssid'),
-            password: any(named: 'password'),
-          )).thenAnswer((_) async => true);
+      when(
+        () => mockProv.sendReceiveCustomData(any()),
+      ).thenAnswer((_) async => customResponse);
+      when(
+        () => mockProv.sendWifiConfig(
+          ssid: any(named: 'ssid'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => true);
       when(() => mockProv.applyWifiConfig()).thenAnswer((_) async => true);
       when(() => mockProv.getStatus()).thenAnswer(
         (_) async => ConnectionStatus(
@@ -183,10 +193,12 @@ void main() {
     });
 
     test('reaches failed with auth error message on AuthError', () async {
-      when(() => mockProv.sendWifiConfig(
-            ssid: any(named: 'ssid'),
-            password: any(named: 'password'),
-          )).thenAnswer((_) async => true);
+      when(
+        () => mockProv.sendWifiConfig(
+          ssid: any(named: 'ssid'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => true);
       when(() => mockProv.applyWifiConfig()).thenAnswer((_) async => true);
       when(() => mockProv.getStatus()).thenAnswer(
         (_) async => ConnectionStatus(
@@ -201,15 +213,19 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 500));
 
       expect(service.state, ProvState.failed);
-      expect(service.errorMessage,
-          'Authentication error (wrong WiFi password)');
+      expect(
+        service.errorMessage,
+        'Authentication error (wrong WiFi password)',
+      );
     });
 
     test('reaches failed with network not found message', () async {
-      when(() => mockProv.sendWifiConfig(
-            ssid: any(named: 'ssid'),
-            password: any(named: 'password'),
-          )).thenAnswer((_) async => true);
+      when(
+        () => mockProv.sendWifiConfig(
+          ssid: any(named: 'ssid'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => true);
       when(() => mockProv.applyWifiConfig()).thenAnswer((_) async => true);
       when(() => mockProv.getStatus()).thenAnswer(
         (_) async => ConnectionStatus(
@@ -228,10 +244,12 @@ void main() {
     });
 
     test('reaches failed when sendWifiConfig throws', () async {
-      when(() => mockProv.sendWifiConfig(
-            ssid: any(named: 'ssid'),
-            password: any(named: 'password'),
-          )).thenThrow(Exception('BLE error'));
+      when(
+        () => mockProv.sendWifiConfig(
+          ssid: any(named: 'ssid'),
+          password: any(named: 'password'),
+        ),
+      ).thenThrow(Exception('BLE error'));
 
       await service.connectAndEstablishSession(mockDevice, 'pop');
       await service.sendConfig('Home', 'pass');
@@ -244,11 +262,12 @@ void main() {
   group('disconnect', () {
     test('resets state to idle and clears data', () async {
       when(() => mockTransport.connect()).thenAnswer((_) async => true);
-      when(() => mockProv.establishSession())
-          .thenAnswer((_) async => EstablishSessionStatus.connected);
-      when(() => mockProv.startScanWiFi()).thenAnswer(
-        (_) async => [const WifiAP(ssid: 'Test', rssi: -50)],
-      );
+      when(
+        () => mockProv.establishSession(),
+      ).thenAnswer((_) async => EstablishSessionStatus.connected);
+      when(
+        () => mockProv.startScanWiFi(),
+      ).thenAnswer((_) async => [const WifiAP(ssid: 'Test', rssi: -50)]);
       when(() => mockProv.dispose()).thenAnswer((_) async {});
 
       await service.connectAndEstablishSession(mockDevice, 'pop');

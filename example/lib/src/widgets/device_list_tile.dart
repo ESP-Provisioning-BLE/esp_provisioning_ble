@@ -6,11 +6,7 @@ class DeviceListTile extends StatelessWidget {
   final ScanResult result;
   final VoidCallback onTap;
 
-  const DeviceListTile({
-    super.key,
-    required this.result,
-    required this.onTap,
-  });
+  const DeviceListTile({super.key, required this.result, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
