@@ -85,8 +85,13 @@ void main() {
     });
 
     test('two APs without bssid fall back to comparing the other fields', () {
-      const ap1 = WifiAP(ssid: 'Net', rssi: -50);
-      const ap2 = WifiAP(ssid: 'Net', rssi: -50);
+      // Not const: two identical const WifiAP literals would be
+      // canonicalized to the same instance by the compiler, making this
+      // pass via plain identity instead of exercising the fallback
+      // comparison in ==.
+      final ap1 = WifiAP(ssid: 'Net', rssi: -50);
+      final ap2 = WifiAP(ssid: 'Net', rssi: -50);
+      expect(identical(ap1, ap2), isFalse);
       expect(ap1, equals(ap2));
       expect(ap1.hashCode, equals(ap2.hashCode));
     });
