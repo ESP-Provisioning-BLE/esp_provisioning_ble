@@ -1,3 +1,10 @@
+## [Unreleased]
+
+#### Changed:
+
+- Relaxed the Dart SDK lower bound from the pre-release `3.1.0-331.0.dev` to the
+  stable `3.1.0`, so the package resolves without requiring a pre-release SDK.
+
 ## [1.0.0] - 11-24-2023 (November 24, 2023)
 
 #### Bug Fixes:
