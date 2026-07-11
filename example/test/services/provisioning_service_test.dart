@@ -51,7 +51,7 @@ void main() {
       final states = <ProvState>[];
       service.addListener(() => states.add(service.state));
 
-      await service.connectAndEstablishSession(mockDevice, 'abcd1234');
+      await service.connectAndEstablishSession(mockDevice, Security1(pop: 'abcd1234'));
 
       expect(service.state, ProvState.sessionReady);
       expect(states, [
@@ -64,7 +64,7 @@ void main() {
     test('reaches failed when transport connect fails', () async {
       when(() => mockTransport.connect()).thenAnswer((_) async => false);
 
-      await service.connectAndEstablishSession(mockDevice, 'abcd1234');
+      await service.connectAndEstablishSession(mockDevice, Security1(pop: 'abcd1234'));
 
       expect(service.state, ProvState.failed);
       expect(service.errorMessage, 'Failed to connect to device');
@@ -75,7 +75,7 @@ void main() {
       when(() => mockProv.establishSession())
           .thenAnswer((_) async => EstablishSessionStatus.disconnected);
 
-      await service.connectAndEstablishSession(mockDevice, 'abcd1234');
+      await service.connectAndEstablishSession(mockDevice, Security1(pop: 'abcd1234'));
 
       expect(service.state, ProvState.disconnected);
       expect(service.errorMessage,
@@ -87,7 +87,7 @@ void main() {
       when(() => mockProv.establishSession())
           .thenAnswer((_) async => EstablishSessionStatus.keymismatch);
 
-      await service.connectAndEstablishSession(mockDevice, 'wrong');
+      await service.connectAndEstablishSession(mockDevice, Security1(pop: 'wrong'));
 
       expect(service.state, ProvState.keyMismatch);
       expect(
@@ -109,7 +109,7 @@ void main() {
       ];
       when(() => mockProv.startScanWiFi()).thenAnswer((_) async => networks);
 
-      await service.connectAndEstablishSession(mockDevice, 'pop');
+      await service.connectAndEstablishSession(mockDevice, Security1());
       await service.scanWifi();
 
       expect(service.state, ProvState.wifiReady);
@@ -119,7 +119,7 @@ void main() {
     test('reaches failed when scan throws', () async {
       when(() => mockProv.startScanWiFi()).thenThrow(Exception('timeout'));
 
-      await service.connectAndEstablishSession(mockDevice, 'pop');
+      await service.connectAndEstablishSession(mockDevice, Security1());
       await service.scanWifi();
 
       expect(service.state, ProvState.failed);
@@ -147,7 +147,7 @@ void main() {
         ),
       );
 
-      await service.connectAndEstablishSession(mockDevice, 'pop');
+      await service.connectAndEstablishSession(mockDevice, Security1());
       await service.sendConfig('Home', 'pass123');
 
       // Wait for the Timer.periodic to fire
@@ -173,7 +173,7 @@ void main() {
         ),
       );
 
-      await service.connectAndEstablishSession(mockDevice, 'pop');
+      await service.connectAndEstablishSession(mockDevice, Security1());
       await service.sendConfig('Home', 'pass', customData: 'Hello');
 
       await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -195,7 +195,7 @@ void main() {
         ),
       );
 
-      await service.connectAndEstablishSession(mockDevice, 'pop');
+      await service.connectAndEstablishSession(mockDevice, Security1());
       await service.sendConfig('Home', 'wrong');
 
       await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -218,7 +218,7 @@ void main() {
         ),
       );
 
-      await service.connectAndEstablishSession(mockDevice, 'pop');
+      await service.connectAndEstablishSession(mockDevice, Security1());
       await service.sendConfig('Ghost', 'pass');
 
       await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -233,7 +233,7 @@ void main() {
             password: any(named: 'password'),
           )).thenThrow(Exception('BLE error'));
 
-      await service.connectAndEstablishSession(mockDevice, 'pop');
+      await service.connectAndEstablishSession(mockDevice, Security1());
       await service.sendConfig('Home', 'pass');
 
       expect(service.state, ProvState.failed);
@@ -251,7 +251,7 @@ void main() {
       );
       when(() => mockProv.dispose()).thenAnswer((_) async {});
 
-      await service.connectAndEstablishSession(mockDevice, 'pop');
+      await service.connectAndEstablishSession(mockDevice, Security1());
       await service.scanWifi();
 
       expect(service.wifiNetworks, isNotEmpty);

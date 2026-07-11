@@ -1,10 +1,12 @@
+import 'package:esp_provisioning_ble/esp_provisioning_ble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import '../services/provisioning_service.dart';
 
-/// Screen where the user enters the proof-of-possession (PoP) and connects
-/// to the ESP32 device, establishing a secure provisioning session.
+/// Screen where the user selects the security mode, optionally enters the
+/// proof-of-possession (PoP), and connects to the ESP32 device, establishing
+/// a provisioning session.
 ///
 /// On success, navigates to the WiFi configuration screen passing the
 /// [ProvisioningService] instance (already connected with session established).
@@ -18,6 +20,7 @@ class ConnectScreen extends StatefulWidget {
 class _ConnectScreenState extends State<ConnectScreen> {
   final _popController = TextEditingController(text: 'abcd1234');
   final _provService = ProvisioningService();
+  bool _useSecurity1 = true;
 
   @override
   void initState() {
@@ -48,7 +51,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
   void _connect() {
     final device = ModalRoute.of(context)!.settings.arguments as BluetoothDevice;
-    _provService.connectAndEstablishSession(device, _popController.text);
+    final security = _useSecurity1
+        ? Security1(pop: _popController.text)
+        : Security0();
+    _provService.connectAndEstablishSession(device, security);
   }
 
   @override
@@ -114,24 +120,54 @@ class _ConnectScreenState extends State<ConnectScreen> {
       );
     }
 
-    // Idle state — show PoP input form.
+    // Idle state — show security mode selector and optional PoP input.
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
-          'Enter the proof-of-possession PIN for this device:',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18),
+        SegmentedButton<bool>(
+          segments: const [
+            ButtonSegment(
+              value: false,
+              label: Text('Security 0'),
+              icon: Icon(Icons.lock_open),
+            ),
+            ButtonSegment(
+              value: true,
+              label: Text('Security 1'),
+              icon: Icon(Icons.lock),
+            ),
+          ],
+          selected: {_useSecurity1},
+          onSelectionChanged: (selection) {
+            setState(() {
+              _useSecurity1 = selection.first;
+            });
+          },
         ),
         const SizedBox(height: 24),
-        TextField(
-          controller: _popController,
-          decoration: const InputDecoration(
-            labelText: 'Proof of Possession',
-            border: OutlineInputBorder(),
+        if (_useSecurity1) ...[
+          const Text(
+            'Enter the proof-of-possession PIN for this device:',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18),
           ),
-        ),
-        const SizedBox(height: 24),
+          const SizedBox(height: 24),
+          TextField(
+            controller: _popController,
+            decoration: const InputDecoration(
+              labelText: 'Proof of Possession',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ] else ...[
+          const Text(
+            'No encryption — connect directly without a proof of possession.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18),
+          ),
+          const SizedBox(height: 24),
+        ],
         SizedBox(
           width: double.infinity,
           height: 48,
