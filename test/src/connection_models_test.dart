@@ -62,6 +62,42 @@ void main() {
     });
   });
 
+  group('WifiAP equality', () {
+    test('two APs with the same bssid are equal regardless of other fields',
+        () {
+      const ap1 = WifiAP(bssid: 'aa:bb:cc:dd:ee:ff', ssid: 'Net', rssi: -50);
+      const ap2 = WifiAP(bssid: 'aa:bb:cc:dd:ee:ff', ssid: 'Other', rssi: -80);
+      expect(ap1, equals(ap2));
+      expect(ap1.hashCode, equals(ap2.hashCode));
+    });
+
+    test('two APs with different bssid are not equal even with same ssid', () {
+      const ap1 = WifiAP(bssid: 'aa:bb:cc:dd:ee:ff', ssid: 'Net', rssi: -50);
+      const ap2 = WifiAP(bssid: 'aa:bb:cc:dd:ee:00', ssid: 'Net', rssi: -50);
+      expect(ap1, isNot(equals(ap2)));
+    });
+
+    test('an AP with bssid and one without are not equal', () {
+      const withBssid =
+          WifiAP(bssid: 'aa:bb:cc:dd:ee:ff', ssid: 'Net', rssi: -50);
+      const withoutBssid = WifiAP(ssid: 'Net', rssi: -50);
+      expect(withBssid, isNot(equals(withoutBssid)));
+    });
+
+    test('two APs without bssid fall back to comparing the other fields', () {
+      const ap1 = WifiAP(ssid: 'Net', rssi: -50);
+      const ap2 = WifiAP(ssid: 'Net', rssi: -50);
+      expect(ap1, equals(ap2));
+      expect(ap1.hashCode, equals(ap2.hashCode));
+    });
+
+    test('two APs without bssid and different fields are not equal', () {
+      const ap1 = WifiAP(ssid: 'Net', rssi: -50);
+      const ap2 = WifiAP(ssid: 'Net', rssi: -60);
+      expect(ap1, isNot(equals(ap2)));
+    });
+  });
+
   group('ConnectionStatus', () {
     test('stores state and optional IP address', () {
       final status = ConnectionStatus(

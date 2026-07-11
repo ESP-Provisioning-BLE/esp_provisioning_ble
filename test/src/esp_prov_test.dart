@@ -130,6 +130,25 @@ void main() {
       expect(result.first.ssid, equals('HomeWifi'));
       expect(result.first.rssi, equals(-55));
       expect(result.first.private, isTrue);
+      expect(result.first.bssid, isNull);
+    });
+
+    test('decodes a present bssid into a colon-separated hex string',
+        () async {
+      final entry = WiFiScanResult()
+        ..ssid = utf8.encode('HomeWifi')
+        ..rssi = -55
+        ..bssid = [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
+        ..auth = proto.WifiAuthMode.WPA2_PSK;
+
+      stubDecryptSequence([
+        _scanStartResp(),
+        _scanStatusResp(1),
+        _scanResultResp([entry]),
+      ]);
+
+      final result = await espProv.startScanWiFi();
+      expect(result.first.bssid, equals('aa:bb:cc:dd:ee:ff'));
     });
 
     test('marks open network as not private', () async {
