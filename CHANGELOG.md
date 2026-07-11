@@ -1,9 +1,34 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+Older entries below are preserved as originally written.
+
 ## [Unreleased]
 
-#### Changed:
+### Added
 
-- Relaxed the Dart SDK lower bound from the pre-release `3.1.0-331.0.dev` to the
-  stable `3.1.0`, so the package resolves without requiring a pre-release SDK.
+- `WifiAP.bssid`: optional BSSID (MAC address) of the scanned access point,
+  decoded from the scan protocol payload when present.
+
+### Changed
+
+- `WifiAP` now implements value equality (`==`/`hashCode`). Two instances are
+  equal when their `bssid` matches; when neither has a `bssid`, equality
+  falls back to comparing `ssid`, `rssi`, `active`, and `private`. This lets
+  consumers reliably compare or deduplicate scan results, including telling
+  apart APs that share the same SSID (for example, a dual-band router's
+  radios). This is an observable behavior change for anyone who previously
+  relied on the default identity-based equality.
+- Relaxed the Dart SDK lower bound from the pre-release `3.1.0-331.0.dev` to
+  the stable `3.1.0`, so the package resolves without requiring a
+  pre-release SDK.
+
+### Fixed
+
+- Corrected offset handling in `sendReceiveCustomData`, which was resending
+  data from offset 0 on every chunk instead of advancing through the buffer.
 
 ## [1.0.0] - 11-24-2023 (November 24, 2023)
 
