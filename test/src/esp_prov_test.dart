@@ -9,7 +9,8 @@ import 'package:esp_provisioning_ble/src/protos/generated/wifi_scan.pb.dart';
 import 'package:esp_provisioning_ble/src/protos/generated/wifi_config.pb.dart';
 import 'package:esp_provisioning_ble/src/connection_models.dart';
 import 'package:esp_provisioning_ble/src/protos/generated/constants.pbenum.dart';
-import 'package:esp_provisioning_ble/src/protos/generated/wifi_constants.pb.dart' as proto;
+import 'package:esp_provisioning_ble/src/protos/generated/wifi_constants.pb.dart'
+    as proto;
 
 class MockProvTransport extends Mock implements ProvTransport {}
 
@@ -160,7 +161,7 @@ void main() {
         _scanStartResp(),
         _scanStatusResp(5),
         _scanResultResp(entries.sublist(0, 4)), // batch 1
-        _scanResultResp(entries.sublist(4)),    // batch 2
+        _scanResultResp(entries.sublist(4)), // batch 2
       ]);
 
       final result = await espProv.startScanWiFi();
@@ -196,7 +197,8 @@ void main() {
       final captured = verify(() => security.encrypt(captureAny())).captured;
       final payload = WiFiConfigPayload.fromBuffer(captured.first as Uint8List);
       expect(utf8.decode(payload.cmdSetConfig.ssid), equals('MySSID'));
-      expect(utf8.decode(payload.cmdSetConfig.passphrase), equals('SecretPass'));
+      expect(
+          utf8.decode(payload.cmdSetConfig.passphrase), equals('SecretPass'));
     });
 
     test('sends request to prov-config endpoint', () async {
@@ -207,12 +209,15 @@ void main() {
 
     test('returns true when device responds with Success', () async {
       stubConfigResponse(status: Status.Success);
-      expect(await espProv.sendWifiConfig(ssid: 'SSID', password: 'pass'), isTrue);
+      expect(
+          await espProv.sendWifiConfig(ssid: 'SSID', password: 'pass'), isTrue);
     });
 
-    test('returns false when device responds with a non-Success status', () async {
+    test('returns false when device responds with a non-Success status',
+        () async {
       stubConfigResponse(status: Status.InvalidArgument);
-      expect(await espProv.sendWifiConfig(ssid: 'SSID', password: 'pass'), isFalse);
+      expect(await espProv.sendWifiConfig(ssid: 'SSID', password: 'pass'),
+          isFalse);
     });
   });
 
@@ -234,7 +239,8 @@ void main() {
       expect(await espProv.applyWifiConfig(), isTrue);
     });
 
-    test('returns false when device responds with a non-Success status', () async {
+    test('returns false when device responds with a non-Success status',
+        () async {
       stubApplyResponse(status: Status.InvalidArgument);
       expect(await espProv.applyWifiConfig(), isFalse);
     });
@@ -243,7 +249,8 @@ void main() {
   group('getStatus', () {
     test('returns Connected with device IP', () async {
       when(() => security.decrypt(any())).thenAnswer((_) async =>
-          _getStatusResp(proto.WifiStationState.Connected, ip4Addr: '192.168.1.1'));
+          _getStatusResp(proto.WifiStationState.Connected,
+              ip4Addr: '192.168.1.1'));
 
       final result = await espProv.getStatus();
 
@@ -252,16 +259,16 @@ void main() {
     });
 
     test('returns Connecting', () async {
-      when(() => security.decrypt(any())).thenAnswer((_) async =>
-          _getStatusResp(proto.WifiStationState.Connecting));
+      when(() => security.decrypt(any())).thenAnswer(
+          (_) async => _getStatusResp(proto.WifiStationState.Connecting));
 
       final result = await espProv.getStatus();
       expect(result.state, equals(WifiConnectionState.Connecting));
     });
 
     test('returns Disconnected', () async {
-      when(() => security.decrypt(any())).thenAnswer((_) async =>
-          _getStatusResp(proto.WifiStationState.Disconnected));
+      when(() => security.decrypt(any())).thenAnswer(
+          (_) async => _getStatusResp(proto.WifiStationState.Disconnected));
 
       final result = await espProv.getStatus();
       expect(result.state, equals(WifiConnectionState.Disconnected));
@@ -284,7 +291,8 @@ void main() {
 
       final result = await espProv.getStatus();
       expect(result.state, equals(WifiConnectionState.ConnectionFailed));
-      expect(result.failedReason, equals(WifiConnectFailedReason.NetworkNotFound));
+      expect(
+          result.failedReason, equals(WifiConnectFailedReason.NetworkNotFound));
     });
   });
 
@@ -295,7 +303,8 @@ void main() {
       );
     });
 
-    test('sends data to custom-data endpoint and returns decrypted response', () async {
+    test('sends data to custom-data endpoint and returns decrypted response',
+        () async {
       when(() => transport.sendReceive('custom-data', any()))
           .thenAnswer((_) async => Uint8List.fromList([7, 8, 9]));
 

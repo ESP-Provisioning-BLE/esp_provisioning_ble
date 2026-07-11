@@ -98,7 +98,9 @@ class _WifiScreenState extends State<WifiScreen> {
         return _buildError(provService);
 
       default:
-        return const Center(child: CircularProgressIndicator(color: Colors.purple));
+        return const Center(
+          child: CircularProgressIndicator(color: Colors.purple),
+        );
     }
   }
 
@@ -186,10 +188,7 @@ class _WifiScreenState extends State<WifiScreen> {
         children: [
           const Icon(Icons.check_circle, size: 64, color: Colors.green),
           const SizedBox(height: 16),
-          const Text(
-            'Provisioned!',
-            style: TextStyle(fontSize: 24),
-          ),
+          const Text('Provisioned!', style: TextStyle(fontSize: 24)),
           if (ip.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text('Device IP: $ip', style: const TextStyle(color: Colors.grey)),

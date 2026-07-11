@@ -37,16 +37,18 @@ class ProvisioningService extends ChangeNotifier {
   final EspProv Function({
     required ProvTransport transport,
     required ProvSecurity security,
-  }) _createProv;
+  })
+  _createProv;
 
   ProvisioningService({
     ProvTransport Function(BluetoothDevice)? createTransport,
     EspProv Function({
       required ProvTransport transport,
       required ProvSecurity security,
-    })? createProv,
-  })  : _createTransport = createTransport ?? _defaultCreateTransport,
-        _createProv = createProv ?? EspProv.new;
+    })?
+    createProv,
+  }) : _createTransport = createTransport ?? _defaultCreateTransport,
+       _createProv = createProv ?? EspProv.new;
 
   static ProvTransport _defaultCreateTransport(BluetoothDevice device) =>
       TransportBLE(device);
@@ -164,38 +166,37 @@ class ProvisioningService extends ChangeNotifier {
     _setState(ProvState.polling);
     _statusTimer?.cancel();
 
-    _statusTimer = Timer.periodic(
-      const Duration(milliseconds: 400),
-      (timer) async {
-        try {
-          final status = await _prov!.getStatus();
-          connectionStatus = status;
+    _statusTimer = Timer.periodic(const Duration(milliseconds: 400), (
+      timer,
+    ) async {
+      try {
+        final status = await _prov!.getStatus();
+        connectionStatus = status;
 
-          switch (status.state) {
-            case WifiConnectionState.Connected:
-              timer.cancel();
-              _logger.d('Device IP: ${status.deviceIp}');
-              _setState(ProvState.success);
-            case WifiConnectionState.Connecting:
-              // Keep polling
-              break;
-            case WifiConnectionState.Disconnected:
-              timer.cancel();
-              errorMessage = 'Device disconnected';
-              _setState(ProvState.disconnected);
-            case WifiConnectionState.ConnectionFailed:
-              timer.cancel();
-              errorMessage = _failedReasonMessage(status.failedReason);
-              _setState(ProvState.failed);
-          }
-        } catch (e) {
-          timer.cancel();
-          _logger.e('Status poll error: $e');
-          errorMessage = 'Lost connection while checking status';
-          _setState(ProvState.failed);
+        switch (status.state) {
+          case WifiConnectionState.Connected:
+            timer.cancel();
+            _logger.d('Device IP: ${status.deviceIp}');
+            _setState(ProvState.success);
+          case WifiConnectionState.Connecting:
+            // Keep polling
+            break;
+          case WifiConnectionState.Disconnected:
+            timer.cancel();
+            errorMessage = 'Device disconnected';
+            _setState(ProvState.disconnected);
+          case WifiConnectionState.ConnectionFailed:
+            timer.cancel();
+            errorMessage = _failedReasonMessage(status.failedReason);
+            _setState(ProvState.failed);
         }
-      },
-    );
+      } catch (e) {
+        timer.cancel();
+        _logger.e('Status poll error: $e');
+        errorMessage = 'Lost connection while checking status';
+        _setState(ProvState.failed);
+      }
+    });
   }
 
   String _failedReasonMessage(WifiConnectFailedReason? reason) {

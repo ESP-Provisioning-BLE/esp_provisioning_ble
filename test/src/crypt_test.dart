@@ -85,7 +85,8 @@ void main() {
       expect(encrypted1, isNot(equals(encrypted2)));
     });
 
-    test('decrypting with the wrong key produces incorrect plaintext', () async {
+    test('decrypting with the wrong key produces incorrect plaintext',
+        () async {
       final crypt = Crypt();
       final plaintext = Uint8List.fromList([0x01, 0x02, 0x03, 0x04]);
       final iv = Uint8List(16);

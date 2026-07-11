@@ -16,10 +16,7 @@ class ProvisioningApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'ESP32 Provisioning',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.purple,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorSchemeSeed: Colors.purple, useMaterial3: true),
       initialRoute: '/',
       routes: {
         '/': (_) => const HomeScreen(),

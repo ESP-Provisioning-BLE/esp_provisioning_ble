@@ -28,11 +28,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
   void _onStateChange() {
     // Navigate to WiFi screen once the session is established.
     if (_provService.state == ProvState.sessionReady) {
-      Navigator.pushReplacementNamed(
-        context,
-        '/wifi',
-        arguments: _provService,
-      );
+      Navigator.pushReplacementNamed(context, '/wifi', arguments: _provService);
     }
     // Trigger rebuild for loading/error states.
     setState(() {});
@@ -47,25 +43,23 @@ class _ConnectScreenState extends State<ConnectScreen> {
   }
 
   void _connect() {
-    final device = ModalRoute.of(context)!.settings.arguments as BluetoothDevice;
+    final device =
+        ModalRoute.of(context)!.settings.arguments as BluetoothDevice;
     _provService.connectAndEstablishSession(device, _popController.text);
   }
 
   @override
   Widget build(BuildContext context) {
     final state = _provService.state;
-    final isLoading = state == ProvState.connecting ||
-        state == ProvState.sessionEstablishing;
+    final isLoading =
+        state == ProvState.connecting || state == ProvState.sessionEstablishing;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.purple,
         centerTitle: true,
-        title: const Text(
-          'Connect',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Connect', style: TextStyle(color: Colors.white)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
