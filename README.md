@@ -1,200 +1,216 @@
 # esp_provisioning_ble
 
-A library for provisioning a ESP32 with Bluetooth BLE
+[![pub package](https://img.shields.io/pub/v/esp_provisioning_ble.svg)](https://pub.dev/packages/esp_provisioning_ble)
+[![pub points](https://img.shields.io/pub/points/esp_provisioning_ble)](https://pub.dev/packages/esp_provisioning_ble/score)
+[![likes](https://img.shields.io/pub/likes/esp_provisioning_ble)](https://pub.dev/packages/esp_provisioning_ble/score)
+[![CI](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/actions/workflows/ci.yml/badge.svg)](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-<p> 
-  <a href="https://ko-fi.com/ogabrielinacio" target="_blank"> <img src="https://ko-fi.com/img/githubbutton_sm.svg"/> </a> 
+<p>
+  <a href="https://ko-fi.com/ogabrielinacio" target="_blank"> <img src="https://ko-fi.com/img/githubbutton_sm.svg"/> </a>
 </p>
 
-## Getting Started
+A Flutter plugin that simplifies provisioning ESP32 modules over Bluetooth Low Energy (BLE).
 
-### Create an EspProv Instance
+It is transport-agnostic: you implement a thin `ProvTransport` with the BLE package of your choice (the [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example) uses [flutter_blue_plus](https://pub.dev/packages/flutter_blue_plus)), and the plugin handles the secure handshake, Wi-Fi scanning, credential delivery and status reporting on top of Espressif's [protocomm](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/protocomm.html) protocol.
 
-The package has an abstract class called `ProvTransport`, that you need to implement using your preferred Bluetooth package. In the [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example)
+## Features
 
-folder there is an implementation of `ProvTransport` using [flutter_blue_plus](https://pub.dev/packages/flutter_blue_plus). A legacy example using [flutter_ble_lib_ios_15](https://github.com/davejlin/flutter_ble_lib_ios_15) is available in [example_legacy](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example_legacy).
+- Secure session establishment with Security 1 (Curve25519 key exchange + AES-CTR) using a Proof-of-Possession (PoP).
+- Scan the Wi-Fi networks visible to the device, with SSID, RSSI, BSSID and whether the network is secured.
+- Send Wi-Fi credentials and apply them, optionally targeting a specific access point by BSSID.
+- Query the provisioning status, including the assigned device IP and the failure reason.
+- Exchange arbitrary custom data over the encrypted session.
+- Transport-agnostic: bring your own BLE stack by implementing `ProvTransport`.
+
+## Supported platforms
+
+| Platform | Support |
+| -------- | :-----: |
+| Android  | ✅      |
+| iOS      | ✅      |
+
+The plugin logic is pure Dart on top of your `ProvTransport`, so the platform reach is ultimately bounded by the BLE package you plug in.
+
+## Table of contents
+
+- [Features](#features)
+- [Supported platforms](#supported-platforms)
+- [Installation](#installation)
+- [Getting started](#getting-started)
+  - [Create an EspProv instance](#create-an-espprov-instance)
+  - [Establish a session](#establish-a-session)
+  - [Scan for Wi-Fi networks](#scan-for-wi-fi-networks)
+  - [Send and apply the Wi-Fi config](#send-and-apply-the-wi-fi-config)
+  - [Check the provisioning status](#check-the-provisioning-status)
+  - [Send and receive custom data](#send-and-receive-custom-data)
+- [Security](#security)
+- [Protocol communication overview](#protocol-communication-overview)
+- [Comparison](#comparison)
+- [Changelog](#changelog)
+- [Credits](#credits)
+- [License](#license)
+
+## Installation
+
+Add the package with:
+
+```sh
+flutter pub add esp_provisioning_ble
+```
+
+Or add it to your `pubspec.yaml` manually and run `flutter pub get`:
+
+```yaml
+dependencies:
+  esp_provisioning_ble: ^1.0.0
+```
+
+## Getting started
+
+The package exposes an abstract `ProvTransport` class that you implement with your preferred Bluetooth package. The [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example) provides a `TransportBLE` implementation built on [flutter_blue_plus](https://pub.dev/packages/flutter_blue_plus). A legacy example using [flutter_ble_lib_ios_15](https://github.com/davejlin/flutter_ble_lib_ios_15) is available in [example_legacy](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example_legacy).
+
+The snippets below are plain Dart, so they fit any state-management approach.
+
+### Create an EspProv instance
+
+`EspProv` takes a `transport` (any `ProvTransport`) and a `security` (any `ProvSecurity`; the package ships `Security1`, which carries the Proof-of-Possession).
 
 ```dart
-prov = EspProv(
-    transport: TransportBLE(peripheral),
-    security: Security1(
-        pop: pop,
-    ),
+final prov = EspProv(
+  transport: TransportBLE(peripheral),
+  security: Security1(pop: pop),
 );
 ```
 
-The `transport` attribute accepts only the `ProvTransport` type, and the `security` attribute accepts only the `ProvSecurity` type, which has an implementation called `Security1` that you will use to pass the Proof-of-Possession (PoP).
+### Establish a session
 
-### Establish a session with the device:
+Call `establishSession` to run the secure handshake. It returns an `EstablishSessionStatus`:
 
-After that, you will need to establish a session with the device. You can do this using the `establishSession` function, which returns three types of `EstablishSessionStatus`:
-
-1. `Connected`: When the device establishes a connection successfully.
-2. `Disconnected`: When an error occurs while establishing a connection with the device.
-3. `KeyMismatch`: When the Proof-of-Possession (PoP) is incorrect.
+- `connected`: the session was established successfully.
+- `disconnected`: the connection to the device dropped.
+- `keymismatch`: the Proof-of-Possession (PoP) is incorrect.
 
 ```dart
-var sessionStatus = await prov.establishSession();
-log.d("Session Status = $sessionStatus");
-switch (sessionStatus) {
-    case EstablishSessionStatus.Connected:
-        emit(BleWifiEstablishedConnectionState());
-    case EstablishSessionStatus.Disconnected:
-        emit(BleWifiEstablishedConnectionFailedState());
-    case EstablishSessionStatus.Keymismatch:
-        emit(BleWifiEstablishedConnectionKeyMismatch());
+final status = await prov.establishSession();
+switch (status) {
+  case EstablishSessionStatus.connected:
+    // Ready to scan and send Wi-Fi credentials.
+    break;
+  case EstablishSessionStatus.disconnected:
+    // Handle the dropped connection.
+    break;
+  case EstablishSessionStatus.keymismatch:
+    // Wrong Proof-of-Possession.
+    break;
 }
 ```
 
-### Scan networks from the device:
+Once the session is established `establishSession` is idempotent, so you can call it defensively without repeating the handshake.
 
-To scan Wi-Fi networks, use the `startScanWifi` function, which returns a list of `WifiAp` objects, each of which has the following attributes:
+### Scan for Wi-Fi networks
 
-1. `String ssid`
-2. `int rssi`
-3. `bool active`
-4. `bool private`
+`startScanWiFi` returns a list of `WifiAP` objects, each with:
+
+- `String ssid`
+- `int rssi`
+- `bool active`
+- `bool private`: whether the network is secured.
+- `String? bssid`: MAC-style address (`aa:bb:cc:dd:ee:ff`) when known.
 
 ```dart
-var listWifi = await prov.startScanWiFi();
-log.d('Found ${listWifi.length} Wi-Fi networks');
-for (var obj in listWifi) {
-    log.d('Wi-Fi network: ${obj.ssid}');
+final networks = await prov.startScanWiFi();
+for (final ap in networks) {
+  print('${ap.ssid} (${ap.rssi} dBm)');
 }
 ```
 
-### Send and Apply WI-Fi Config:
+### Send and apply the Wi-Fi config
 
-To send and apply  config use the `sendWifiConfig` and `applyWifiConfig`  functions, respectively.
+`sendWifiConfig` delivers the credentials and returns whether the device accepted them; `applyWifiConfig` then tells the device to connect. Pass an optional `bssid` to target a specific access point.
 
 ```dart
-await prov.sendWifiConfig(ssid: event.ssid, password: event.password);
+await prov.sendWifiConfig(ssid: ssid, password: password);
+// Or target a specific access point:
+// await prov.sendWifiConfig(ssid: ssid, password: password, bssid: 'aa:bb:cc:dd:ee:ff');
 await prov.applyWifiConfig();
 ```
 
-### Get the status of applying Wi-Fi Config:
+### Check the provisioning status
 
-To retrieve the status, use the `getStatus` function, which returns a `ConnectionStatus` type. `ConnectionStatus` has the following attributes:
+`getStatus` returns a `ConnectionStatus` with:
 
-1. `WifiConnectionState state`: `WifiConnectionState` has four types of states:
-   
-   - Connected.
-   - Connecting.
-   - Disconnected.
-   - ConnectionFailed: When the state is `ConnectionFailed`, the `WifiConnectFailedReason` attribute indicates the type of error.
-
-2. `String? deviceIp`: This registers the device's IP after provisioning.
-
-3. `WifiConnectFailedReason? failedReason`: `WifiConnectFailedReason` has two types of failed reasons:
-   
-   - AuthError: When the Wi-Fi password was incorrectly typed.
-   - NetworkNotFound: When the Wi-Fi SSID was incorrectly typed.
+- `WifiConnectionState state`: `Connecting`, `Connected`, `Disconnected` or `ConnectionFailed`.
+- `String? deviceIp`: the device IP once connected.
+- `WifiConnectFailedReason? failedReason`: `AuthError` (wrong password) or `NetworkNotFound` (wrong SSID), set when the state is `ConnectionFailed`.
 
 ```dart
-ConnectionStatus status = await prov.getStatus();
+final status = await prov.getStatus();
 switch (status.state) {
-    case WifiConnectionState.Connecting:
-    {
-        add(BleWifiLoadingEvent());
-    }
-    case WifiConnectionState.Connected:
-    {
-        log.d("Device IP: ${status.deviceIp}");
-        add(BleWifiConnectedEvent());
-    }
-    case WifiConnectionState.Disconnected:
-    {
-        add(BleWifiDisconnectedEvent());
-    }
-    case WifiConnectionState.ConnectionFailed:
-    {
-        add(
-            BleWifiConnectionFailedEvent(
-                failedReason: status.failedReason!,
-            ),
-        );
-    }
+  case WifiConnectionState.Connecting:
+    // Still connecting.
+    break;
+  case WifiConnectionState.Connected:
+    print('Device IP: ${status.deviceIp}');
+    break;
+  case WifiConnectionState.Disconnected:
+    // Not connected.
+    break;
+  case WifiConnectionState.ConnectionFailed:
+    // Inspect status.failedReason.
+    break;
 }
 ```
 
-## Send custom data:
+### Send and receive custom data
 
-To send and receive a custom data, use the `sendReceiveCustomData`  function
+`sendReceiveCustomData` sends a payload over the encrypted session and returns the device's response.
 
 ```dart
-var customAnswerBytes = await prov.sendReceiveCustomData(
-    Uint8List.fromList(
-        utf8.encode(customSendMessage),
-    ),
+final answerBytes = await prov.sendReceiveCustomData(
+  Uint8List.fromList(utf8.encode(message)),
 );
-var customAnswer = utf8.decode(customAnswerBytes);
-log.i("Custom data answer: $customAnswer");
+final answer = utf8.decode(answerBytes);
 ```
 
-Check [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example) application (flutter_blue_plus) or [example_legacy](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example_legacy) (flutter_ble_lib_ios_15).
+See the [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example) (flutter_blue_plus) or [example_legacy](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example_legacy) (flutter_ble_lib_ios_15) for complete applications.
 
-### Protocol Communication Overview
+## Security
 
-The Protocol Communication ([protocomm](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/protocomm.html#overview)) component manages secure 
-sessions and provides the framework for multiple transports. The 
-application can also use the protocomm layer directly to have 
-application-specific extensions for the provisioning or non-provisioning
- use cases.
+This package currently implements **Security 1** through the `Security1` class: a Curve25519 key exchange with AES-CTR encryption, authenticated with a Proof-of-Possession (PoP). This maps to Espressif's `protocomm_security1`.
 
-Following features are available for provisioning:
+- **Security 0** (no security) is in progress.
+- **Security 2** (SRP6a key exchange + AES-GCM) is not yet available.
 
-* Communication security at the application level
-  
-  * `protocomm_security0` (no security)
-  
-  * `protocomm_security1` (Curve25519 key exchange + AES-CTR encryption/decryption)
-  
-  * `protocomm_security2` (SRP6a-based key exchange + AES-GCM encryption/decryption)
+To use a different scheme, provide your own `ProvSecurity` implementation.
 
-* Proof-of-possession (support with protocomm_security1 only)
+## Protocol communication overview
 
-* Salt and Verifier (support with protocomm_security2 only)
+The [protocomm](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/protocomm.html#overview) component from ESP-IDF manages secure sessions and provides the framework for multiple transports. Applications can also use the protocomm layer directly for application-specific extensions.
 
-Protocomm internally uses protobuf (protocol buffers) for secure 
-session establishment. Users can choose to implement their own security 
-(even without using protobuf). Protocomm can also be used without any 
-security layer.
+It defines three security schemes:
 
-Protocomm provides the framework for various transports:
+- `protocomm_security0`: no security.
+- `protocomm_security1`: Curve25519 key exchange + AES-CTR (implemented here as `Security1`).
+- `protocomm_security2`: SRP6a key exchange + AES-GCM.
 
-- Bluetooth LE
+Proof-of-Possession is supported with security 1; salt and verifier with security 2. Protocomm uses protobuf for session establishment and provides the framework for transports such as Bluetooth LE, Wi-Fi (SoftAP + HTTPD) and console.
 
-- Wi-Fi (SoftAP + HTTPD)
+For security 1 and security 2 the client still needs to establish a session by performing the two-way handshake. See [Unified Provisioning](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/provisioning.html) for more details on the handshake logic.
 
-- Console, in which case the handler invocation is automatically 
-  taken care of on the device side. See Transport Examples below for code 
-  snippets.
+## Comparison
 
-Note that for protocomm_security1 and protocomm_security2, the client
- still needs to establish sessions by performing the two-way handshake. 
-See [Unified Provisioning](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/provisioning.html) for more details about the secure handshake logic.
+`esp_provisioning_ble` is the Bluetooth LE counterpart to [esp_provisioning_softap](https://github.com/nicop2000/esp_provisioning_softap): this package provisions the device over Bluetooth LE, while `esp_provisioning_softap` provisions it over Wi-Fi SoftAP. Both build on the protocomm security schemes and protobuf.
 
-### Comparasion:
+## Changelog
 
-Comparison with esp_provisioning_softap package:
+See the [CHANGELOG](CHANGELOG.md) for the release history.
 
-| Repo                    | softap support | ble support | cryptography | protobuf   |
-| ----------------------- | -------------- | ----------- | ------------ | ---------- |
-| esp_provisioning_softap | ✔️             | ✖️          | ✔️ (2.0.1)   | ✔️ (2.0.0) |
-| esp_provisioning_ble    | ✖️             | ✔️          | ✔️ (2.5.0)   | ✔️ (3.0.0) |
+## Credits
 
-Last update: 10/06/2023 (Octorber 6, 2023).
+- Based on [esp_provisioning](https://github.com/unicloudvn/esp_provisioning/tree/master).
+- Also references [esp_provisioning_softap](https://github.com/nicop2000/esp_provisioning_softap), a Dart 3.0-compatible version of [esp_softap_provisioning](https://github.com/omert08/esp_softap_provisioning).
 
-#### TODOS:
+## License
 
-- ~~Test and create examples of the package with others Bluetooth packages.~~
-
-  * ~~flutter_blue_plus~~ (done — see [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example))
-
-- Implement security 0
-- Implement security 2
-
-### Credits
-
-- Code based on [esp_provisioning](https://github.com/unicloudvn/esp_provisioning/tree/master).
-- I also referenced [esp_provisioning_softap](https://github.com/nicop2000/esp_provisioning_softap), which is a Dart 3.0 compatible version from [esp_softap_provisioning](https://github.com/omert08/esp_softap_provisioning).
+Released under the [MIT License](LICENSE).
