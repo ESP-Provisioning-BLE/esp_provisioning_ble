@@ -47,7 +47,8 @@ class WifiListTile extends StatelessWidget {
         network.bssid != null
             ? 'RSSI: ${network.rssi} dBm - BSSID: ${network.bssid}'
             : 'RSSI: ${network.rssi} dBm',
-      ),      trailing: network.private
+      ),
+      trailing: network.private
           ? const Icon(Icons.lock, size: 16)
           : const Icon(Icons.lock_open, size: 16),
       onTap: onTap,

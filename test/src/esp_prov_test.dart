@@ -133,8 +133,7 @@ void main() {
       expect(result.first.bssid, isNull);
     });
 
-    test('decodes a present bssid into a colon-separated hex string',
-        () async {
+    test('decodes a present bssid into a colon-separated hex string', () async {
       final entry = WiFiScanResult()
         ..ssid = utf8.encode('HomeWifi')
         ..rssi = -55

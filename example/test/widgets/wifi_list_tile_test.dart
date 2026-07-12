@@ -66,11 +66,11 @@ void main() {
     });
 
     testWidgets('appends BSSID to the subtitle when present', (tester) async {
-      await tester.pumpWidget(buildTile(const WifiAP(
-        ssid: 'MyWifi',
-        rssi: -55,
-        bssid: 'aa:bb:cc:dd:ee:ff',
-      )));
+      await tester.pumpWidget(
+        buildTile(
+          const WifiAP(ssid: 'MyWifi', rssi: -55, bssid: 'aa:bb:cc:dd:ee:ff'),
+        ),
+      );
 
       expect(
         find.text('RSSI: -55 dBm - BSSID: aa:bb:cc:dd:ee:ff'),
@@ -79,8 +79,9 @@ void main() {
     });
 
     testWidgets('omits BSSID from the subtitle when absent', (tester) async {
-      await tester
-          .pumpWidget(buildTile(const WifiAP(ssid: 'MyWifi', rssi: -55)));
+      await tester.pumpWidget(
+        buildTile(const WifiAP(ssid: 'MyWifi', rssi: -55)),
+      );
 
       expect(find.text('RSSI: -55 dBm'), findsOneWidget);
     });
@@ -88,22 +89,25 @@ void main() {
 
   group('same-SSID warning', () {
     testWidgets('hidden by default', (tester) async {
-      await tester
-          .pumpWidget(buildTile(const WifiAP(ssid: 'MyWifi', rssi: -55)));
+      await tester.pumpWidget(
+        buildTile(const WifiAP(ssid: 'MyWifi', rssi: -55)),
+      );
 
       expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
     });
 
     testWidgets('shown when sharesSsidWithOtherAp is true', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: WifiListTile(
-            network: const WifiAP(ssid: 'MyWifi', rssi: -55),
-            onTap: () {},
-            sharesSsidWithOtherAp: true,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: WifiListTile(
+              network: const WifiAP(ssid: 'MyWifi', rssi: -55),
+              onTap: () {},
+              sharesSsidWithOtherAp: true,
+            ),
           ),
         ),
-      ));
+      );
 
       expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
     });

@@ -193,11 +193,13 @@ void main() {
     });
 
     test('passes bssid through to sendWifiConfig when provided', () async {
-      when(() => mockProv.sendWifiConfig(
-            ssid: any(named: 'ssid'),
-            password: any(named: 'password'),
-            bssid: any(named: 'bssid'),
-          )).thenAnswer((_) async => true);
+      when(
+        () => mockProv.sendWifiConfig(
+          ssid: any(named: 'ssid'),
+          password: any(named: 'password'),
+          bssid: any(named: 'bssid'),
+        ),
+      ).thenAnswer((_) async => true);
       when(() => mockProv.applyWifiConfig()).thenAnswer((_) async => true);
       when(() => mockProv.getStatus()).thenAnswer(
         (_) async => ConnectionStatus(
@@ -207,19 +209,17 @@ void main() {
       );
 
       await service.connectAndEstablishSession(mockDevice, 'pop');
-      await service.sendConfig(
-        'Home',
-        'pass123',
-        bssid: 'aa:bb:cc:dd:ee:ff',
-      );
+      await service.sendConfig('Home', 'pass123', bssid: 'aa:bb:cc:dd:ee:ff');
 
       await Future<void>.delayed(const Duration(milliseconds: 500));
 
-      verify(() => mockProv.sendWifiConfig(
-            ssid: 'Home',
-            password: 'pass123',
-            bssid: 'aa:bb:cc:dd:ee:ff',
-          )).called(1);
+      verify(
+        () => mockProv.sendWifiConfig(
+          ssid: 'Home',
+          password: 'pass123',
+          bssid: 'aa:bb:cc:dd:ee:ff',
+        ),
+      ).called(1);
       expect(service.state, ProvState.success);
     });
 

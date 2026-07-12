@@ -180,8 +180,10 @@ class _WifiScreenState extends State<WifiScreen> {
     ProvisioningService provService,
     WifiAP network,
   ) async {
-    final credentials =
-        await WifiPasswordDialog.show(context, ssid: network.ssid);
+    final credentials = await WifiPasswordDialog.show(
+      context,
+      ssid: network.ssid,
+    );
     if (credentials != null) {
       provService.sendConfig(
         credentials.ssid,

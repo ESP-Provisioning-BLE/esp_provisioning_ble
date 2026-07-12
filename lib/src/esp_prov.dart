@@ -271,9 +271,8 @@ class EspProv {
   /// representation of the BSSID is like a MAC address. Callers are expected to
   /// pass exactly 6 bytes; this function does not validate that itself, see the
   /// length check in [scanResultResponse].
-  String _decodeBssid(List<int> binaryBssid) => binaryBssid
-      .map((e) => e.toRadixString(16).padLeft(2, '0'))
-      .join(':');
+  String _decodeBssid(List<int> binaryBssid) =>
+      binaryBssid.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':');
 
   static final RegExp _bssidFormat =
       RegExp(r'^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}$');
