@@ -133,10 +133,14 @@ class ProvisioningService extends ChangeNotifier {
   /// Sends WiFi credentials to the ESP32 and starts polling for connection status.
   ///
   /// Optionally sends [customData] before configuring WiFi (useful for
-  /// application-specific setup like device registration tokens).
+  /// application-specific setup like device registration tokens), and
+  /// optionally pins the connection to a specific access point via
+  /// [bssid] (only meaningful when more than one AP is broadcasting the
+  /// same [ssid], e.g. a dual-band router or a mesh node).
   Future<void> sendConfig(
     String ssid,
     String password, {
+    String? bssid,
     String? customData,
   }) async {
     _setState(ProvState.configSending);
@@ -148,7 +152,15 @@ class ProvisioningService extends ChangeNotifier {
         _logger.i('Custom data response: ${utf8.decode(response)}');
       }
 
-      await _prov!.sendWifiConfig(ssid: ssid, password: password);
+      if (bssid != null) {
+        await _prov!.sendWifiConfig(
+          ssid: ssid,
+          password: password,
+          bssid: bssid,
+        );
+      } else {
+        await _prov!.sendWifiConfig(ssid: ssid, password: password);
+      }
       await _prov!.applyWifiConfig();
       _pollStatus();
     } catch (e) {
