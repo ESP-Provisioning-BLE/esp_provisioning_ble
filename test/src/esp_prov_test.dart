@@ -7,6 +7,7 @@ import 'package:esp_provisioning_ble/src/transport.dart';
 import 'package:esp_provisioning_ble/src/security.dart';
 import 'package:esp_provisioning_ble/src/protos/generated/wifi_scan.pb.dart';
 import 'package:esp_provisioning_ble/src/protos/generated/wifi_config.pb.dart';
+import 'package:esp_provisioning_ble/src/protos/generated/session.pb.dart';
 import 'package:esp_provisioning_ble/src/connection_models.dart';
 import 'package:esp_provisioning_ble/src/protos/generated/constants.pbenum.dart';
 import 'package:esp_provisioning_ble/src/protos/generated/wifi_constants.pb.dart'
@@ -76,6 +77,7 @@ Uint8List _getStatusResp(
 void main() {
   setUpAll(() {
     registerFallbackValue(Uint8List(0));
+    registerFallbackValue(SessionData());
   });
 
   late MockProvTransport transport;
@@ -439,6 +441,43 @@ void main() {
 
       expect(result, isEmpty);
       verifyNever(() => security.decrypt(any()));
+    });
+  });
+
+  group('establishSession', () {
+    test(
+        'returns connected immediately when the session is already finished (idempotent)',
+        () async {
+      when(() => transport.checkConnect()).thenAnswer((_) async => true);
+      when(() => security.securitySession(any())).thenAnswer((_) async => null);
+
+      final status = await espProv.establishSession();
+
+      expect(status, EstablishSessionStatus.connected);
+      // Idempotent: no extra BLE round-trip is performed.
+      verifyNever(() => transport.sendReceive(any(), any()));
+    });
+
+    test(
+        'returns keymismatch when the handshake throws but the link is still up',
+        () async {
+      when(() => transport.checkConnect()).thenAnswer((_) async => true);
+      when(() => security.securitySession(any()))
+          .thenThrow(Exception('bad pop'));
+
+      expect(
+        await espProv.establishSession(),
+        EstablishSessionStatus.keymismatch,
+      );
+    });
+
+    test('returns disconnected when the transport is not connected', () async {
+      when(() => transport.checkConnect()).thenAnswer((_) async => false);
+
+      expect(
+        await espProv.establishSession(),
+        EstablishSessionStatus.disconnected,
+      );
     });
   });
 }

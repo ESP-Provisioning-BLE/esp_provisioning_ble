@@ -58,12 +58,10 @@ void main() {
       expect(result!.secVer, equals(SecSchemeVersion.SecScheme1));
     });
 
-    test('throws an Exception when called in the finish state', () async {
+    test('returns null when called in the finish state (idempotent)', () async {
       final sec = Security1(sessionState: SecurityState.finish);
-      expect(
-        () => sec.securitySession(SessionData()),
-        throwsA(isA<Exception>()),
-      );
+      final result = await sec.securitySession(SessionData());
+      expect(result, isNull);
     });
   });
 }

@@ -74,6 +74,15 @@ class Security1 implements ProvSecurity {
       await setup1Response(responseData);
       return null;
     }
+    if (sessionState == SecurityState.finish) {
+      // Session is already established. Returning null signals to
+      // [EspProv.establishSession] that there is nothing left to negotiate,
+      // so the loop exits with [EstablishSessionStatus.connected] without
+      // performing any extra BLE round-trip. This makes the call idempotent
+      // and lets callers invoke `establishSession()` defensively without
+      // paying the cost of the handshake every time.
+      return null;
+    }
     throw Exception('Unexpected state');
   }
 
