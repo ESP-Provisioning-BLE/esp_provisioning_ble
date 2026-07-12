@@ -132,6 +132,63 @@ void main() {
       expect(result.first.ssid, equals('HomeWifi'));
       expect(result.first.rssi, equals(-55));
       expect(result.first.private, isTrue);
+      expect(result.first.bssid, isNull);
+    });
+
+    test('decodes a present bssid into a colon-separated hex string', () async {
+      final entry = WiFiScanResult()
+        ..ssid = utf8.encode('HomeWifi')
+        ..rssi = -55
+        ..bssid = [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
+        ..auth = proto.WifiAuthMode.WPA2_PSK;
+
+      stubDecryptSequence([
+        _scanStartResp(),
+        _scanStatusResp(1),
+        _scanResultResp([entry]),
+      ]);
+
+      final result = await espProv.startScanWiFi();
+      expect(result.first.bssid, equals('aa:bb:cc:dd:ee:ff'));
+    });
+
+    test('zero-pads bssid bytes below 0x10 instead of dropping the digit',
+        () async {
+      // Regression test: int.toRadixString(16) does not zero-pad, so a byte
+      // like 0x05 used to decode to "5" instead of "05", producing a bssid
+      // string that was not valid MAC notation.
+      final entry = WiFiScanResult()
+        ..ssid = utf8.encode('HomeWifi')
+        ..rssi = -55
+        ..bssid = [0xaa, 0x05, 0xcc, 0x00, 0xee, 0xff]
+        ..auth = proto.WifiAuthMode.WPA2_PSK;
+
+      stubDecryptSequence([
+        _scanStartResp(),
+        _scanStatusResp(1),
+        _scanResultResp([entry]),
+      ]);
+
+      final result = await espProv.startScanWiFi();
+      expect(result.first.bssid, equals('aa:05:cc:00:ee:ff'));
+    });
+
+    test('treats a bssid of the wrong length as absent instead of garbage',
+        () async {
+      final entry = WiFiScanResult()
+        ..ssid = utf8.encode('HomeWifi')
+        ..rssi = -55
+        ..bssid = [0xaa, 0xbb, 0xcc] // malformed: not 6 bytes
+        ..auth = proto.WifiAuthMode.WPA2_PSK;
+
+      stubDecryptSequence([
+        _scanStartResp(),
+        _scanStatusResp(1),
+        _scanResultResp([entry]),
+      ]);
+
+      final result = await espProv.startScanWiFi();
+      expect(result.first.bssid, isNull);
     });
 
     test('marks open network as not private', () async {
@@ -220,6 +277,48 @@ void main() {
       stubConfigResponse(status: Status.InvalidArgument);
       expect(await espProv.sendWifiConfig(ssid: 'SSID', password: 'pass'),
           isFalse);
+    });
+
+    test('encodes bssid into the protobuf request when provided', () async {
+      stubConfigResponse();
+
+      await espProv.sendWifiConfig(
+        ssid: 'MySSID',
+        password: 'SecretPass',
+        bssid: 'aa:05:cc:00:ee:ff',
+      );
+
+      final captured = verify(() => security.encrypt(captureAny())).captured;
+      final payload = WiFiConfigPayload.fromBuffer(captured.first as Uint8List);
+      expect(
+        payload.cmdSetConfig.bssid,
+        equals([0xaa, 0x05, 0xcc, 0x00, 0xee, 0xff]),
+      );
+    });
+
+    test('omits bssid from the protobuf request when not provided', () async {
+      stubConfigResponse();
+
+      await espProv.sendWifiConfig(ssid: 'MySSID', password: 'SecretPass');
+
+      final captured = verify(() => security.encrypt(captureAny())).captured;
+      final payload = WiFiConfigPayload.fromBuffer(captured.first as Uint8List);
+      expect(payload.cmdSetConfig.bssid, isEmpty);
+    });
+
+    test(
+        'rejects a malformed bssid with a FormatException without hitting '
+        'the transport', () async {
+      expect(
+        espProv.sendWifiConfig(
+          ssid: 'MySSID',
+          password: 'SecretPass',
+          bssid: 'not-a-bssid',
+        ),
+        throwsFormatException,
+      );
+
+      verifyNever(() => transport.sendReceive(any(), any()));
     });
   });
 

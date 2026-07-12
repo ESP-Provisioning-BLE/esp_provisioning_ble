@@ -192,6 +192,37 @@ void main() {
       expect(service.state, ProvState.success);
     });
 
+    test('passes bssid through to sendWifiConfig when provided', () async {
+      when(
+        () => mockProv.sendWifiConfig(
+          ssid: any(named: 'ssid'),
+          password: any(named: 'password'),
+          bssid: any(named: 'bssid'),
+        ),
+      ).thenAnswer((_) async => true);
+      when(() => mockProv.applyWifiConfig()).thenAnswer((_) async => true);
+      when(() => mockProv.getStatus()).thenAnswer(
+        (_) async => ConnectionStatus(
+          state: WifiConnectionState.Connected,
+          deviceIp: '192.168.1.100',
+        ),
+      );
+
+      await service.connectAndEstablishSession(mockDevice, 'pop');
+      await service.sendConfig('Home', 'pass123', bssid: 'aa:bb:cc:dd:ee:ff');
+
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+
+      verify(
+        () => mockProv.sendWifiConfig(
+          ssid: 'Home',
+          password: 'pass123',
+          bssid: 'aa:bb:cc:dd:ee:ff',
+        ),
+      ).called(1);
+      expect(service.state, ProvState.success);
+    });
+
     test('reaches failed with auth error message on AuthError', () async {
       when(
         () => mockProv.sendWifiConfig(

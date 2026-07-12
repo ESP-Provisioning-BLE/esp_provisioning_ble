@@ -1,3 +1,4 @@
+import 'package:esp_provisioning_ble/esp_provisioning_ble.dart';
 import 'package:flutter/material.dart';
 
 import '../services/provisioning_service.dart';
@@ -126,6 +127,14 @@ class _WifiScreenState extends State<WifiScreen> {
   Widget _buildNetworkList(ProvisioningService provService) {
     final networks = provService.wifiNetworks;
 
+    // Networks sharing an SSID with a different BSSID are flagged in the
+    // list (e.g. a dual-band router's two radios, or a mesh node), since
+    // they are not necessarily the same physical access point.
+    final ssidCounts = <String, int>{};
+    for (final network in networks) {
+      ssidCounts[network.ssid] = (ssidCounts[network.ssid] ?? 0) + 1;
+    }
+
     return Column(
       children: [
         Padding(
@@ -157,7 +166,8 @@ class _WifiScreenState extends State<WifiScreen> {
               final network = networks[index];
               return WifiListTile(
                 network: network,
-                onTap: () => _onNetworkSelected(provService, network.ssid),
+                sharesSsidWithOtherAp: (ssidCounts[network.ssid] ?? 0) > 1,
+                onTap: () => _onNetworkSelected(provService, network),
               );
             },
           ),
@@ -168,13 +178,20 @@ class _WifiScreenState extends State<WifiScreen> {
 
   Future<void> _onNetworkSelected(
     ProvisioningService provService,
-    String ssid,
+    WifiAP network,
   ) async {
-    final credentials = await WifiPasswordDialog.show(context, ssid: ssid);
+    final credentials = await WifiPasswordDialog.show(
+      context,
+      ssid: network.ssid,
+    );
     if (credentials != null) {
       provService.sendConfig(
         credentials.ssid,
         credentials.password,
+        // Pins the connection to this specific access point when its
+        // BSSID is known, rather than letting the ESP32 pick among any
+        // AP advertising the same SSID.
+        bssid: network.bssid,
         customData: credentials.customData,
       );
     }
