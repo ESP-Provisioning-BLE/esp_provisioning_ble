@@ -77,25 +77,22 @@ class BleScanner extends ChangeNotifier {
 
     // Subscribe to results before starting scan (recommended FBP pattern).
     _scanResultsSub?.cancel();
-    _scanResultsSub = FlutterBluePlus.onScanResults.listen(
-      (results) {
-        if (results.isEmpty) return;
-        for (final r in results) {
-          _logger.d(
-            'Discovered: "${r.device.platformName}" '
-            '${r.device.remoteId} RSSI: ${r.rssi}',
-          );
-          final alreadyFound = _devices.any(
-            (d) => d.device.remoteId == r.device.remoteId,
-          );
-          if (!alreadyFound) {
-            _devices = [..._devices, r];
-            notifyListeners();
-          }
+    _scanResultsSub = FlutterBluePlus.onScanResults.listen((results) {
+      if (results.isEmpty) return;
+      for (final r in results) {
+        _logger.d(
+          'Discovered: "${r.device.platformName}" '
+          '${r.device.remoteId} RSSI: ${r.rssi}',
+        );
+        final alreadyFound = _devices.any(
+          (d) => d.device.remoteId == r.device.remoteId,
+        );
+        if (!alreadyFound) {
+          _devices = [..._devices, r];
+          notifyListeners();
         }
-      },
-      onError: (e) => _logger.e('scanResults error: $e'),
-    );
+      }
+    }, onError: (e) => _logger.e('scanResults error: $e'));
 
     // Auto-cancel subscription when scan completes.
     FlutterBluePlus.cancelWhenScanComplete(_scanResultsSub!);

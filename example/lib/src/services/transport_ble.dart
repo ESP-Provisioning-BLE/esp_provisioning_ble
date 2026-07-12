@@ -44,9 +44,10 @@ class TransportBLE implements ProvTransport {
   /// the endpoint hex value, and appends the rest of the service UUID.
   /// Example: service `021a9004-...` + endpoint `ff50` -> `021aff50-...`
   String _buildCharUUID(String endpointHex) {
-    final hex = int.parse(endpointHex, radix: 16)
-        .toRadixString(16)
-        .padLeft(4, '0');
+    final hex = int.parse(
+      endpointHex,
+      radix: 16,
+    ).toRadixString(16).padLeft(4, '0');
     return '${serviceUUID.substring(0, 4)}$hex${serviceUUID.substring(8)}';
   }
 

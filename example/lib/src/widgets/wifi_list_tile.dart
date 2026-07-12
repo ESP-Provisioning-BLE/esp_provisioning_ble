@@ -7,19 +7,12 @@ class WifiListTile extends StatelessWidget {
   final WifiAP network;
   final VoidCallback onTap;
 
-  const WifiListTile({
-    super.key,
-    required this.network,
-    required this.onTap,
-  });
+  const WifiListTile({super.key, required this.network, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(
-        _signalIcon(network.rssi),
-        color: Colors.purple,
-      ),
+      leading: Icon(_signalIcon(network.rssi), color: Colors.purple),
       title: Text(network.ssid),
       subtitle: Text('RSSI: ${network.rssi} dBm'),
       trailing: network.private

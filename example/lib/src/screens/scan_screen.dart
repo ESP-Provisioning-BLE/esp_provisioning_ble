@@ -67,10 +67,7 @@ class _ScanScreenState extends State<ScanScreen> {
       appBar: AppBar(
         backgroundColor: Colors.purple,
         centerTitle: true,
-        title: const Text(
-          'BLE Devices',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('BLE Devices', style: TextStyle(color: Colors.white)),
       ),
       body: ListenableBuilder(
         listenable: _scanner,
@@ -182,10 +179,6 @@ class _ScanScreenState extends State<ScanScreen> {
 
   void _onDeviceSelected(ScanResult result) {
     _scanner.stopScan();
-    Navigator.pushNamed(
-      context,
-      '/connect',
-      arguments: result.device,
-    );
+    Navigator.pushNamed(context, '/connect', arguments: result.device);
   }
 }

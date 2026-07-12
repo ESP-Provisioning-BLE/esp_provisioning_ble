@@ -43,13 +43,15 @@ void main() {
   });
 
   group('Security1.securitySession state machine', () {
-    test('first call advances state from request1 to response1Request2', () async {
+    test('first call advances state from request1 to response1Request2',
+        () async {
       final sec = Security1();
       await sec.securitySession(SessionData());
       expect(sec.sessionState, equals(SecurityState.response1Request2));
     });
 
-    test('first call returns non-null SessionData (setup0Request output)', () async {
+    test('first call returns non-null SessionData (setup0Request output)',
+        () async {
       final sec = Security1();
       final result = await sec.securitySession(SessionData());
       expect(result, isNotNull);

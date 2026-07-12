@@ -2,19 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-From version 1.0.1 onwards this file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) conventions.
-Older entries below are preserved as originally written.
+From the next release onwards this file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) conventions. Older entries below are preserved as originally written.
 
-## [1.0.1] - 2026-04-18
+## [Unreleased]
+
+### Changed
+
+- Relaxed the Dart SDK lower bound from the pre-release `3.1.0-331.0.dev` to the stable `3.1.0`, so the package resolves without requiring a pre-release SDK.
 
 ### Fixed
 
-- `Security1.securitySession` now returns `null` instead of throwing
-  `'Unexpected state'` when called after the handshake has already
-  completed (`SecurityState.finish`). Previously, a defensive second
-  call to `EspProv.establishSession` on a reused instance was caught
-  internally and misreported as `EstablishSessionStatus.keymismatch`,
-  forcing consumers to disconnect and reconnect unnecessarily.
+- `Security1.securitySession` now returns `null` instead of throwing `'Unexpected state'` when called after the handshake has already completed (`SecurityState.finish`), so a defensive second `EspProv.establishSession` on a reused instance is no longer misreported as `keymismatch`.
 
 ---
 
