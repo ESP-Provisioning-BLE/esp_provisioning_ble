@@ -10,9 +10,9 @@ A library for provisioning a ESP32 with Bluetooth BLE
 
 ### Create an EspProv Instance
 
-The package has an abstract class called `ProvTransport`, that you need to implement using your preferred Bluetooth package. In the [example](https://github.com/ogabrielinacio/esp_provisioning_ble/tree/main/example)
+The package has an abstract class called `ProvTransport`, that you need to implement using your preferred Bluetooth package. In the [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example)
 
-folder there is an implementation of `ProvTransport` using [flutter_blue_plus](https://pub.dev/packages/flutter_blue_plus). A legacy example using [flutter_ble_lib_ios_15](https://github.com/davejlin/flutter_ble_lib_ios_15) is available in [example_legacy](https://github.com/ogabrielinacio/esp_provisioning_ble/tree/main/example_legacy).
+folder there is an implementation of `ProvTransport` using [flutter_blue_plus](https://pub.dev/packages/flutter_blue_plus). A legacy example using [flutter_ble_lib_ios_15](https://github.com/davejlin/flutter_ble_lib_ios_15) is available in [example_legacy](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example_legacy).
 
 ```dart
 prov = EspProv(
@@ -131,7 +131,7 @@ var customAnswer = utf8.decode(customAnswerBytes);
 log.i("Custom data answer: $customAnswer");
 ```
 
-Check [example](https://github.com/ogabrielinacio/esp_provisioning_ble/tree/main/example) application (flutter_blue_plus) or [example_legacy](https://github.com/ogabrielinacio/esp_provisioning_ble/tree/main/example_legacy) (flutter_ble_lib_ios_15).
+Check [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example) application (flutter_blue_plus) or [example_legacy](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example_legacy) (flutter_ble_lib_ios_15).
 
 ### Protocol Communication Overview
 
@@ -189,7 +189,7 @@ Last update: 10/06/2023 (Octorber 6, 2023).
 
 - ~~Test and create examples of the package with others Bluetooth packages.~~
 
-  * ~~flutter_blue_plus~~ (done — see [example](https://github.com/ogabrielinacio/esp_provisioning_ble/tree/main/example))
+  * ~~flutter_blue_plus~~ (done — see [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example))
 
 - Implement security 0
 - Implement security 2
