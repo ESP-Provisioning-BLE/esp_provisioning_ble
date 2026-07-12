@@ -9,6 +9,10 @@ import 'protos/generated/session.pb.dart';
 import 'security.dart';
 import 'crypt.dart';
 
+/// A class to manage the Bluetooth Security level 1 (SEC1) protocol.
+///
+/// Security level 1 consists of Curve25519 key exchange +
+/// AES-CTR encryption/decryption.
 class Security1 implements ProvSecurity {
   final String? pop;
   final bool verbose;
@@ -77,6 +81,7 @@ class Security1 implements ProvSecurity {
     throw Exception('Unexpected state');
   }
 
+  /// Returns the `SessionData` for the initial request.
   Future<SessionData> setup0Request() async {
     _verbose('setup0Request');
     var setupRequest = SessionData();
@@ -94,6 +99,7 @@ class Security1 implements ProvSecurity {
     return setupRequest;
   }
 
+  /// Returns the `SessionData` for the initial response.
   Future<SessionData> setup0Response(SessionData responseData) async {
     SessionData setupResp = responseData;
     if (setupResp.secVer != SecSchemeVersion.SecScheme1) {
@@ -127,6 +133,7 @@ class Security1 implements ProvSecurity {
     return setupResp;
   }
 
+  /// Returns the `SessionData` for the second request.
   Future<SessionData> setup1Request(SessionData responseData) async {
     _verbose('setup1Request ${devicePublicKey.bytes.toString()}');
     var clientVerify = await encrypt(Uint8List.fromList(devicePublicKey.bytes));
@@ -143,6 +150,7 @@ class Security1 implements ProvSecurity {
     return setupRequest;
   }
 
+  /// Returns the `SessionData` for the second response.
   Future<SessionData?> setup1Response(SessionData responseData) async {
     _verbose('setup1Response');
     var setupResp = responseData;

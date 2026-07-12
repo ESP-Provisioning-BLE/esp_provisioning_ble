@@ -11,9 +11,21 @@ import 'protos/generated/wifi_scan.pb.dart';
 import 'security.dart';
 import 'transport.dart';
 
+/// Represents the status of establishing the provisioning session with
+/// the device.
 enum EstablishSessionStatus {
+  /// The provisioning session with the device has been established
+  /// successfully.
   connected,
+
+  /// The provisioning session with the device has been disconnected.
   disconnected,
+
+  /// The provisioning session with the device couldn't be established because
+  /// of a keymismatch.
+  ///
+  /// If this happens, review your provided security configuration (e.g., the
+  /// proof of possession).
   keymismatch,
 }
 

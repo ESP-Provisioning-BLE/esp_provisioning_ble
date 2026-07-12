@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+/// A class for interacting with the `crypt` method of the ESP
+/// Provisioning BLE plugin.
 class Crypt {
   static const MethodChannel _channel = MethodChannel('esp_provisioning_ble');
 
