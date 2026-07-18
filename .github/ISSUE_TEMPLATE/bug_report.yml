@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a problem with esp_provisioning_ble
+labels: ["type/bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please do not use this form for security vulnerabilities; see the security policy instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including what you expected to happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps (and code, if possible) to reproduce the behavior.
+    validations:
+      required: true
+  - type: input
+    id: package-version
+    attributes:
+      label: Package version
+      description: Which version of esp_provisioning_ble are you using?
+    validations:
+      required: true
+  - type: input
+    id: flutter-version
+    attributes:
+      label: Flutter version
+      description: Output of `flutter --version`.
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options:
+        - Android
+        - iOS
+    validations:
+      required: true
+  - type: input
+    id: ble-package
+    attributes:
+      label: BLE transport package
+      description: Which package backs your ProvTransport (for example, flutter_blue_plus)?
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant logs or stack traces.
+      render: shell

@@ -47,7 +47,11 @@ jobs:
           coverage-files: coverage/lcov.info
           minimum-coverage: 60
           github-token: ${{ github.token }}
-          update-comment: true
+          # Only comment on same-repo PRs. Fork PRs get a read-only token, so
+          # commenting fails with "Resource not accessible by integration".
+          # Coverage is still computed and the 60% threshold is still enforced
+          # on forks; they just don't get the inline comment.
+          update-comment: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
 
       - name: Validate publishability
         run: dart pub publish --dry-run
