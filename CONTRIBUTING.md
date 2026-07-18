@@ -55,7 +55,7 @@ flutter test
 - **Tests and coverage**: run `flutter test --coverage`. Coverage, excluding the generated protobuf files under `*/generated/*`, must stay at or above **60%**. New code should come with tests.
 - **Publishability**: CI runs `dart pub publish --dry-run`; keep it clean.
 
-Pull requests opened from a fork cannot post the automated coverage comment, because GitHub gives fork workflows a read-only token; a maintainer will confirm coverage in that case.
+Pull requests opened from a fork still run the coverage check and must meet the 60% threshold; they simply do not get the inline coverage comment, because GitHub gives fork workflows a read-only token.
 
 Testing the Security 1 handshake without physical hardware is tracked in #28 (a device-simulator approach). See that issue if your change touches the handshake.
 
