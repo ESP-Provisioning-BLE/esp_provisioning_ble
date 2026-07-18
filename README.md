@@ -5,6 +5,7 @@
 [![likes](https://img.shields.io/pub/likes/esp_provisioning_ble)](https://pub.dev/packages/esp_provisioning_ble/score)
 [![CI](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/actions/workflows/ci.yml/badge.svg)](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 A Flutter plugin that simplifies provisioning ESP32 modules over Bluetooth Low Energy (BLE).
 
@@ -44,6 +45,7 @@ The plugin logic is pure Dart on top of your `ProvTransport`, so the platform re
 - [Protocol communication overview](#protocol-communication-overview)
 - [Comparison](#comparison)
 - [Changelog](#changelog)
+- [Contributing](#contributing)
 - [Credits](#credits)
 - [License](#license)
 
@@ -180,6 +182,8 @@ This package currently implements **Security 1** through the `Security1` class: 
 
 To use a different scheme, provide your own `ProvSecurity` implementation.
 
+To report a security vulnerability, please follow the [security policy](SECURITY.md).
+
 ## Protocol communication overview
 
 The [protocomm](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/protocomm.html#overview) component from ESP-IDF manages secure sessions and provides the framework for multiple transports. Applications can also use the protocomm layer directly for application-specific extensions.
@@ -201,6 +205,10 @@ For security 1 and security 2 the client still needs to establish a session by p
 ## Changelog
 
 See the [CHANGELOG](CHANGELOG.md) for the release history.
+
+## Contributing
+
+Contributions are welcome. Please read the [contributing guide](CONTRIBUTING.md) to get set up and learn the workflow. This project follows a [Code of Conduct](CODE_OF_CONDUCT.md), and security issues are handled through our [security policy](SECURITY.md).
 
 ## Credits
 
