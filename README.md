@@ -6,10 +6,6 @@
 [![CI](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/actions/workflows/ci.yml/badge.svg)](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-<p>
-  <a href="https://ko-fi.com/ogabrielinacio" target="_blank"> <img src="https://ko-fi.com/img/githubbutton_sm.svg"/> </a>
-</p>
-
 A Flutter plugin that simplifies provisioning ESP32 modules over Bluetooth Low Energy (BLE).
 
 It is transport-agnostic: you implement a thin `ProvTransport` with the BLE package of your choice (the [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example) uses [flutter_blue_plus](https://pub.dev/packages/flutter_blue_plus)), and the plugin handles the secure handshake, Wi-Fi scanning, credential delivery and status reporting on top of Espressif's [protocomm](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/protocomm.html) protocol.
