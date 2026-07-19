@@ -4,7 +4,7 @@
 //
 // @dart = 2.12
 
-// ignore_for_file: annotate_overrides, camel_case_types
+// ignore_for_file: annotate_overrides, camel_case_types, comment_references
 // ignore_for_file: constant_identifier_names, library_prefixes
 // ignore_for_file: non_constant_identifier_names, prefer_final_fields
 // ignore_for_file: unnecessary_import, unnecessary_this, unused_import
@@ -39,10 +39,9 @@ const WifiConnectFailedReason$json = {
 };
 
 /// Descriptor for `WifiConnectFailedReason`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List wifiConnectFailedReasonDescriptor =
-    $convert.base64Decode(
-        'ChdXaWZpQ29ubmVjdEZhaWxlZFJlYXNvbhINCglBdXRoRXJyb3IQABITCg9OZXR3b3JrTm90Rm'
-        '91bmQQAQ==');
+final $typed_data.Uint8List wifiConnectFailedReasonDescriptor = $convert.base64Decode(
+    'ChdXaWZpQ29ubmVjdEZhaWxlZFJlYXNvbhINCglBdXRoRXJyb3IQABITCg9OZXR3b3JrTm90Rm'
+    '91bmQQAQ==');
 
 @$core.Deprecated('Use wifiAuthModeDescriptor instead')
 const WifiAuthMode$json = {
@@ -54,27 +53,23 @@ const WifiAuthMode$json = {
     {'1': 'WPA2_PSK', '2': 3},
     {'1': 'WPA_WPA2_PSK', '2': 4},
     {'1': 'WPA2_ENTERPRISE', '2': 5},
+    {'1': 'WPA3_PSK', '2': 6},
+    {'1': 'WPA2_WPA3_PSK', '2': 7},
   ],
 };
 
 /// Descriptor for `WifiAuthMode`. Decode as a `google.protobuf.EnumDescriptorProto`.
 final $typed_data.Uint8List wifiAuthModeDescriptor = $convert.base64Decode(
     'CgxXaWZpQXV0aE1vZGUSCAoET3BlbhAAEgcKA1dFUBABEgsKB1dQQV9QU0sQAhIMCghXUEEyX1'
-    'BTSxADEhAKDFdQQV9XUEEyX1BTSxAEEhMKD1dQQTJfRU5URVJQUklTRRAF');
+    'BTSxADEhAKDFdQQV9XUEEyX1BTSxAEEhMKD1dQQTJfRU5URVJQUklTRRAFEgwKCFdQQTNfUFNL'
+    'EAYSEQoNV1BBMl9XUEEzX1BTSxAH');
 
 @$core.Deprecated('Use wifiConnectedStateDescriptor instead')
 const WifiConnectedState$json = {
   '1': 'WifiConnectedState',
   '2': [
     {'1': 'ip4_addr', '3': 1, '4': 1, '5': 9, '10': 'ip4Addr'},
-    {
-      '1': 'auth_mode',
-      '3': 2,
-      '4': 1,
-      '5': 14,
-      '6': '.WifiAuthMode',
-      '10': 'authMode'
-    },
+    {'1': 'auth_mode', '3': 2, '4': 1, '5': 14, '6': '.WifiAuthMode', '10': 'authMode'},
     {'1': 'ssid', '3': 3, '4': 1, '5': 12, '10': 'ssid'},
     {'1': 'bssid', '3': 4, '4': 1, '5': 12, '10': 'bssid'},
     {'1': 'channel', '3': 5, '4': 1, '5': 5, '10': 'channel'},
@@ -86,3 +81,4 @@ final $typed_data.Uint8List wifiConnectedStateDescriptor = $convert.base64Decode
     'ChJXaWZpQ29ubmVjdGVkU3RhdGUSGQoIaXA0X2FkZHIYASABKAlSB2lwNEFkZHISKgoJYXV0aF'
     '9tb2RlGAIgASgOMg0uV2lmaUF1dGhNb2RlUghhdXRoTW9kZRISCgRzc2lkGAMgASgMUgRzc2lk'
     'EhQKBWJzc2lkGAQgASgMUgVic3NpZBIYCgdjaGFubmVsGAUgASgFUgdjaGFubmVs');
+

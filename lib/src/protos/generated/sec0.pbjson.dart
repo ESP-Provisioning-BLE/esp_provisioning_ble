@@ -4,7 +4,7 @@
 //
 // @dart = 2.12
 
-// ignore_for_file: annotate_overrides, camel_case_types
+// ignore_for_file: annotate_overrides, camel_case_types, comment_references
 // ignore_for_file: constant_identifier_names, library_prefixes
 // ignore_for_file: non_constant_identifier_names, prefer_final_fields
 // ignore_for_file: unnecessary_import, unnecessary_this, unused_import
@@ -33,8 +33,8 @@ const S0SessionCmd$json = {
 };
 
 /// Descriptor for `S0SessionCmd`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List s0SessionCmdDescriptor =
-    $convert.base64Decode('CgxTMFNlc3Npb25DbWQ=');
+final $typed_data.Uint8List s0SessionCmdDescriptor = $convert.base64Decode(
+    'CgxTMFNlc3Npb25DbWQ=');
 
 @$core.Deprecated('Use s0SessionRespDescriptor instead')
 const S0SessionResp$json = {
@@ -53,24 +53,8 @@ const Sec0Payload$json = {
   '1': 'Sec0Payload',
   '2': [
     {'1': 'msg', '3': 1, '4': 1, '5': 14, '6': '.Sec0MsgType', '10': 'msg'},
-    {
-      '1': 'sc',
-      '3': 20,
-      '4': 1,
-      '5': 11,
-      '6': '.S0SessionCmd',
-      '9': 0,
-      '10': 'sc'
-    },
-    {
-      '1': 'sr',
-      '3': 21,
-      '4': 1,
-      '5': 11,
-      '6': '.S0SessionResp',
-      '9': 0,
-      '10': 'sr'
-    },
+    {'1': 'sc', '3': 20, '4': 1, '5': 11, '6': '.S0SessionCmd', '9': 0, '10': 'sc'},
+    {'1': 'sr', '3': 21, '4': 1, '5': 11, '6': '.S0SessionResp', '9': 0, '10': 'sr'},
   ],
   '8': [
     {'1': 'payload'},
@@ -82,3 +66,4 @@ final $typed_data.Uint8List sec0PayloadDescriptor = $convert.base64Decode(
     'CgtTZWMwUGF5bG9hZBIeCgNtc2cYASABKA4yDC5TZWMwTXNnVHlwZVIDbXNnEh8KAnNjGBQgAS'
     'gLMg0uUzBTZXNzaW9uQ21kSABSAnNjEiAKAnNyGBUgASgLMg4uUzBTZXNzaW9uUmVzcEgAUgJz'
     'ckIJCgdwYXlsb2Fk');
+
