@@ -1,21 +1,42 @@
-# Authentication didn't work
-# # .github/workflows/publish.yml
-# name: Publish to pub.dev
+name: Publish to pub.dev
 
-# on:
-#   push:
-#     branches:
-#     - main
-# # Publish using custom workflow
-# jobs:
-#   publish:
-#     permissions:
-#       id-token: write # Required for authentication using OIDC
-#     runs-on: ubuntu-latest
-#     # uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
-#     steps:
-#       - uses: actions/checkout@v3
-#       - name: Install dependencies
-#         run: flutter pub get
-#       - name: Publish
-#         run: dart pub publish --force
+# Automated publishing to pub.dev over OIDC, triggered by a version tag.
+# pub.dev is configured (Automated publishing) to accept pushes from this
+# repository with the tag pattern v{{version}}, and to require the protected
+# "pub.dev" environment. Creation of v* tags is restricted to administrators
+# by a tag ruleset, and the environment requires manual approval, so a release
+# needs both a tag from an admin and an explicit approval before it publishes.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pub.dev
+    permissions:
+      id-token: write # OIDC token used to authenticate against pub.dev
+      contents: read # actions/checkout
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+
+      - name: Verify tag matches pubspec version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          if [ "$tag" != "$version" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match pubspec version $version"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Publish
+        run: dart pub publish --force
