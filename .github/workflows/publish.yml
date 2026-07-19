@@ -6,6 +6,10 @@ name: Publish to pub.dev
 # "pub.dev" environment. Creation of v* tags is restricted to administrators
 # by a tag ruleset, and the environment requires manual approval, so a release
 # needs both a tag from an admin and an explicit approval before it publishes.
+#
+# The GitHub OIDC -> pub.dev credential exchange is performed by the
+# dart-lang/setup-dart step; flutter-action alone does not do it. flutter-action
+# is still needed so `flutter pub get` can resolve the `sdk: flutter` deps.
 
 on:
   push:
@@ -22,6 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Provisions the temporary pub.dev credential from the GitHub OIDC token.
+      - uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
+
+      # Flutter for `flutter pub get`; its dart takes PATH precedence for publish.
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
