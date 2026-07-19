@@ -65,7 +65,7 @@ Add an entry under the `## [Unreleased]` section of [CHANGELOG.md](CHANGELOG.md)
 
 ## Versioning
 
-The project follows semantic versioning. Maintainers label each pull request with its semver impact: `bump/patch`, `bump/minor`, `bump/major`, or `bump/not-required` for docs, metadata, or CI-only changes.
+The project follows semantic versioning. Maintainers label each pull request with its semver impact: `bump/patch`, `bump/minor`, `bump/major`, or `bump/not-required` for docs, metadata, or CI-only changes. Maintainers: see [RELEASING.md](RELEASING.md) for how releases are cut and published to pub.dev.
 
 ## License
 
