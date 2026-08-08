@@ -18,9 +18,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  protobuf: ^3.0.0
-  cryptography: ^2.5.0
-  collection: ^1.17.2
+  protobuf: ^4.1.1
+  collection: ^1.18.0
+  cryptography: ^2.7.0
 
 dev_dependencies:
   flutter_test:
