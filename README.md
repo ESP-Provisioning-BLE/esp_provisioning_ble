@@ -9,15 +9,16 @@
 
 A Flutter plugin that simplifies provisioning ESP32 modules over Bluetooth Low Energy (BLE).
 
-It is transport-agnostic: you implement a thin `ProvTransport` with the BLE package of your choice (the [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example) uses [flutter_blue_plus](https://pub.dev/packages/flutter_blue_plus)), and the plugin handles the secure handshake, Wi-Fi scanning, credential delivery and status reporting on top of Espressif's [protocomm](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/protocomm.html) protocol.
+It is transport-agnostic: you implement a thin `ProvTransport` with the BLE package of your choice (the [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example) uses [flutter_blue_plus](https://pub.dev/packages/flutter_blue_plus)), and the plugin handles the session handshake, Wi-Fi scanning, credential delivery and status reporting on top of Espressif's [protocomm](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/protocomm.html) protocol.
 
 ## Features
 
 - Secure session establishment with Security 1 (Curve25519 key exchange + AES-CTR) using a Proof-of-Possession (PoP).
-- Scan the Wi-Fi networks visible to the device, with SSID, RSSI, BSSID and whether the network is secured.
+- Unencrypted sessions with Security 0, for devices provisioned without security.
+- Scan the Wi-Fi networks visible to the device, with SSID, RSSI, BSSID and whether the network needs credentials.
 - Send Wi-Fi credentials and apply them, optionally targeting a specific access point by BSSID.
 - Query the provisioning status, including the assigned device IP and the failure reason.
-- Exchange arbitrary custom data over the encrypted session.
+- Exchange arbitrary custom data over the provisioning session.
 - Transport-agnostic: bring your own BLE stack by implementing `ProvTransport`.
 
 ## Supported platforms
@@ -61,8 +62,10 @@ Or add it to your `pubspec.yaml` manually and run `flutter pub get`:
 
 ```yaml
 dependencies:
-  esp_provisioning_ble: ^1.0.0
+  esp_provisioning_ble: ^1.2.0
 ```
+
+It requires Flutter 3.13 or later (Dart 3.1 or later). On Android the plugin's `minSdk` is 19; your app's own `minSdk` may be higher.
 
 ## Getting started
 
@@ -72,22 +75,28 @@ The snippets below are plain Dart, so they fit any state-management approach.
 
 ### Create an EspProv instance
 
-`EspProv` takes a `transport` (any `ProvTransport`) and a `security` (any `ProvSecurity`; the package ships `Security1`, which carries the Proof-of-Possession).
+`EspProv` takes a `transport` (any `ProvTransport`) and a `security` (any `ProvSecurity`). The package ships `Security1`, which carries the Proof-of-Possession, and `Security0`, for devices provisioned without security. Use the one that matches the security scheme of the device firmware.
 
 ```dart
 final prov = EspProv(
   transport: TransportBLE(peripheral),
   security: Security1(pop: pop),
 );
+
+// For a device provisioned without security:
+final openProv = EspProv(
+  transport: TransportBLE(peripheral),
+  security: Security0(),
+);
 ```
 
 ### Establish a session
 
-Call `establishSession` to run the secure handshake. It returns an `EstablishSessionStatus`:
+Call `establishSession` to run the session handshake. It returns an `EstablishSessionStatus`:
 
 - `connected`: the session was established successfully.
 - `disconnected`: the connection to the device dropped.
-- `keymismatch`: the Proof-of-Possession (PoP) is incorrect.
+- `keymismatch`: the handshake failed while the device was still connected. With `Security1` this usually means the Proof-of-Possession (PoP) is incorrect; with `Security0`, that the device's answer was not a valid Security 0 response.
 
 ```dart
 final status = await prov.establishSession();
@@ -113,7 +122,7 @@ Once the session is established `establishSession` is idempotent, so you can cal
 - `String ssid`
 - `int rssi`
 - `bool active`
-- `bool private`: whether the network is secured.
+- `bool private`: whether joining the network needs credentials. It is `false` only for Open and OWE (Wi-Fi Enhanced Open) networks, and `true` for every other auth mode, including WPA3 and any mode this package does not know yet.
 - `String? bssid`: MAC-style address (`aa:bb:cc:dd:ee:ff`) when known.
 
 ```dart
@@ -122,6 +131,8 @@ for (final ap in networks) {
   print('${ap.ssid} (${ap.rssi} dBm)');
 }
 ```
+
+If the device answers a scan request with a message of an unexpected type (for example a corrupted or out-of-order BLE message), `startScanWiFi` throws an `UnexpectedMessageTypeException`, which exposes the expected and received message types. It implements `Exception`, so an existing `on Exception` or `catch (e)` handler still catches it.
 
 ### Send and apply the Wi-Fi config
 
@@ -162,7 +173,7 @@ switch (status.state) {
 
 ### Send and receive custom data
 
-`sendReceiveCustomData` sends a payload over the encrypted session and returns the device's response.
+`sendReceiveCustomData` sends a payload over the session (encrypted with `Security1`, in the clear with `Security0`) and returns the device's response.
 
 ```dart
 final answerBytes = await prov.sendReceiveCustomData(
@@ -175,9 +186,10 @@ See the [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/t
 
 ## Security
 
-This package currently implements **Security 1** through the `Security1` class: a Curve25519 key exchange with AES-CTR encryption, authenticated with a Proof-of-Possession (PoP). This maps to Espressif's `protocomm_security1`.
+This package implements two of Espressif's security schemes:
 
-- **Security 0** (no security) is in progress.
+- **Security 1** through the `Security1` class: a Curve25519 key exchange with AES-CTR encryption, authenticated with a Proof-of-Possession (PoP). This maps to Espressif's `protocomm_security1`.
+- **Security 0** through the `Security0` class: no encryption and no Proof-of-Possession, so everything, including the Wi-Fi password, travels in the clear over BLE. This maps to `protocomm_security0` and is meant for devices whose firmware is built without security (`WIFI_PROV_SECURITY_0`).
 - **Security 2** (SRP6a key exchange + AES-GCM) is not yet available.
 
 To use a different scheme, provide your own `ProvSecurity` implementation.
@@ -190,13 +202,13 @@ The [protocomm](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-
 
 It defines three security schemes:
 
-- `protocomm_security0`: no security.
+- `protocomm_security0`: no security (implemented here as `Security0`).
 - `protocomm_security1`: Curve25519 key exchange + AES-CTR (implemented here as `Security1`).
 - `protocomm_security2`: SRP6a key exchange + AES-GCM.
 
 Proof-of-Possession is supported with security 1; salt and verifier with security 2. Protocomm uses protobuf for session establishment and provides the framework for transports such as Bluetooth LE, Wi-Fi (SoftAP + HTTPD) and console.
 
-For security 1 and security 2 the client still needs to establish a session by performing the two-way handshake. See [Unified Provisioning](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/provisioning.html) for more details on the handshake logic.
+For security 1 and security 2 the client still needs to establish a session by performing the two-way handshake. See [Unified Provisioning](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/provisioning.html) for more details on the handshake logic. With security 0 there is no key exchange, but `establishSession` still runs one request/response round with the device before the session is ready.
 
 ## Comparison
 
