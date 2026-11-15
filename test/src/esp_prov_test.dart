@@ -530,6 +530,55 @@ void main() {
       expect(result, isEmpty);
       verifyNever(() => security.decrypt(any()));
     });
+
+    for (final packageSize in [0, -1]) {
+      test('throws ArgumentError for packageSize $packageSize without sending',
+          () async {
+        await expectLater(
+          espProv.sendReceiveCustomData(
+            Uint8List.fromList([1, 2, 3]),
+            packageSize: packageSize,
+          ),
+          throwsA(isA<ArgumentError>()
+              .having((e) => e.name, 'name', 'packageSize')
+              .having((e) => e.invalidValue, 'invalidValue', packageSize)),
+        );
+        verifyNever(() => transport.sendReceive(any(), any()));
+        verifyNever(() => security.encrypt(any()));
+      });
+    }
+
+    test('throws ArgumentError for packageSize 0 even with empty data',
+        () async {
+      await expectLater(
+        espProv.sendReceiveCustomData(Uint8List(0), packageSize: 0),
+        throwsArgumentError,
+      );
+      verifyNever(() => transport.sendReceive(any(), any()));
+    });
+
+    test('packageSize 1 sends one byte per request', () async {
+      final sent = <List<int>>[];
+      when(() => transport.sendReceive('custom-data', any()))
+          .thenAnswer((inv) async {
+        sent.add(List<int>.from(inv.positionalArguments[1] as Uint8List));
+        return Uint8List.fromList([sent.length]);
+      });
+
+      final result = await espProv.sendReceiveCustomData(
+        Uint8List.fromList([1, 2, 3]),
+        packageSize: 1,
+      );
+
+      expect(
+          sent,
+          equals([
+            [1],
+            [2],
+            [3]
+          ]));
+      expect(result, equals(Uint8List.fromList([1, 2, 3])));
+    });
   });
 
   group('unexpected message type', () {
