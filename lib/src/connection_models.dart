@@ -40,11 +40,7 @@ enum WifiConnectFailedReason {
 class ConnectionStatus {
   /// Creates a connection status with the given [state] and, when they
   /// apply, the [deviceIp] and the [failedReason].
-  ConnectionStatus({
-    required this.state,
-    this.deviceIp,
-    this.failedReason,
-  });
+  ConnectionStatus({required this.state, this.deviceIp, this.failedReason});
 
   /// The state of the connection.
   final WifiConnectionState state;

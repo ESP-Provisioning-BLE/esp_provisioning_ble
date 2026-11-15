@@ -11,9 +11,10 @@ import 'package:esp_provisioning_ble/src/protos/generated/session.pb.dart';
 SessionData _step0Response() {
   return SessionData()
     ..secVer = SecSchemeVersion.SecScheme0
-    ..sec0 = (Sec0Payload()
-      ..msg = Sec0MsgType.S0_Session_Response
-      ..sr = (S0SessionResp()..status = Status.Success));
+    ..sec0 =
+        (Sec0Payload()
+          ..msg = Sec0MsgType.S0_Session_Response
+          ..sr = (S0SessionResp()..status = Status.Success));
 }
 
 void main() {
@@ -73,21 +74,21 @@ void main() {
       expect(sec.sessionState, equals(Security0State.finish));
     });
 
-    test('returns null when called again after handshake is complete',
-        () async {
-      final sec = Security0();
-      await sec.securitySession(SessionData()); // step0Request
-      final response = _step0Response();
-      await sec.securitySession(response); // step0Response -> finish
-      final result = await sec.securitySession(SessionData()); // idempotent
-      expect(result, isNull);
-    });
+    test(
+      'returns null when called again after handshake is complete',
+      () async {
+        final sec = Security0();
+        await sec.securitySession(SessionData()); // step0Request
+        final response = _step0Response();
+        await sec.securitySession(response); // step0Response -> finish
+        final result = await sec.securitySession(SessionData()); // idempotent
+        expect(result, isNull);
+      },
+    );
 
     test('accepts a valid response decoded from the wire', () async {
       final sec = Security0(sessionState: Security0State.step0Response);
-      final response = SessionData.fromBuffer(
-        _step0Response().writeToBuffer(),
-      );
+      final response = SessionData.fromBuffer(_step0Response().writeToBuffer());
       final result = await sec.securitySession(response);
       expect(result, isNull);
       expect(sec.sessionState, equals(Security0State.finish));
@@ -106,9 +107,10 @@ void main() {
 
     test('throws when the sec0 payload has no session response', () async {
       final sec = Security0(sessionState: Security0State.step0Response);
-      final response = SessionData()
-        ..secVer = SecSchemeVersion.SecScheme0
-        ..sec0 = (Sec0Payload()..msg = Sec0MsgType.S0_Session_Response);
+      final response =
+          SessionData()
+            ..secVer = SecSchemeVersion.SecScheme0
+            ..sec0 = (Sec0Payload()..msg = Sec0MsgType.S0_Session_Response);
       await expectLater(
         sec.securitySession(response),
         throwsA(isA<Exception>()),
@@ -118,10 +120,7 @@ void main() {
     test('throws when secVer does not match SecScheme0', () async {
       final sec = Security0(sessionState: Security0State.step0Response);
       final response = SessionData()..secVer = SecSchemeVersion.SecScheme1;
-      expect(
-        () => sec.securitySession(response),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => sec.securitySession(response), throwsA(isA<Exception>()));
     });
   });
 }
