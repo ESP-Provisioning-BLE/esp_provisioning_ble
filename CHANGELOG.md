@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- `sendReceiveCustomData` throws an `ArgumentError` naming `packageSize`, before sending anything, when `packageSize` is not greater than zero. With `0` and non-empty data it used to loop forever sending empty chunks to the device, and a negative value failed with a `RangeError` about an unrelated `end` argument ([#68](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/68)).
+
 ## [1.2.0] - 2026-11-15
 
 This release makes the plugin build again on Android with current Flutter releases, adds `Security0` for devices provisioned without security, reports WPA3 networks correctly in scan results, and throws a typed exception when a scan response has an unexpected message type. It also declares Flutter 3.13.0 as the minimum, which the Dart SDK constraint already implied. There are no breaking changes in the Dart API; the move of the Android native code to a new namespace only affects code that names the plugin class directly (see Changed).
