@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `UnexpectedMessageTypeException`: a typed exception thrown by `startScanResponse`, `scanStatusResponse` and `scanResultResponse` (and so by `scan`/`startScanWiFi`) when the device answers with a message type other than the one expected. It exposes `expectedType`, `expectedValue`, `actualType`, `actualValue` and `payload` using only core Dart types. It implements `Exception` and its `toString()` is identical to the plain `Exception('Invalid expected message type ...')` thrown before, so existing `on Exception`, `catch (e)` and string-comparing code keeps working unchanged.
+
 ## [1.1.0] - 2026-07-19
 
 This is the first release published under the ESP-Provisioning-BLE organization. It focuses on unblocking installation on a stable Dart SDK, adding BSSID support, and fixing genuine issues carried over from 1.0.0. These changes should not affect existing users negatively; if anything does, please open an issue, they are very welcome.
