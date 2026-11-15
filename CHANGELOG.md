@@ -9,14 +9,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - `UnexpectedMessageTypeException`: a typed exception thrown by `startScanResponse`, `scanStatusResponse` and `scanResultResponse` (and so by `scan`/`startScanWiFi`) when the device answers with a message type other than the one expected. It exposes `expectedType`, `expectedValue`, `actualType`, `actualValue` and `payload` using only core Dart types. It implements `Exception` and its `toString()` is identical to the plain `Exception('Invalid expected message type ...')` thrown before, so existing `on Exception`, `catch (e)` and string-comparing code keeps working unchanged.
+- The `WPA3_PSK` (6) and `WPA2_WPA3_PSK` (7) auth modes in the `WifiAuthMode` protobuf enum, matching `wifi_constants.proto` in ESP-IDF v5.4, so scan results from WPA3 networks decode to a known mode (#19). Thanks to @xiayesuifeng for the contribution.
 
 ### Changed
 
 - Declared Flutter 3.13.0 as the minimum (`flutter: ">=3.13.0"`, previously `>=1.17.0`). The Dart SDK constraint (`>=3.1.0`) already required it, so nobody who could install the package before is excluded.
+- Moved the Android native code from `com.ogabrielinacio.esp_provisioning_ble` to the organization's namespace, `dev.espprovble.esp_provisioning_ble` ([#36](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/36)). The Dart API and the method channel are unchanged, and Flutter regenerates the plugin registrant on the next build. Only code that names the plugin class directly, such as a manual registration on a custom `FlutterEngine`, has to switch to `dev.espprovble.esp_provisioning_ble.EspProvisioningBlePlugin`. A ProGuard or R8 rule that names the old class now matches nothing; the plugin does not need one.
 
 ### Fixed
 
 - Android builds with current Flutter releases ([#54](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/54)). The plugin compiled against API 33, which apps on AGP 8.13 or later (required since Flutter 3.50) reject, and new apps failed to build from Flutter 3.44. It now compiles against API 34, targets Java 11, and applies the Kotlin Gradle Plugin only when Flutter or AGP has not already done so, which also removes Flutter's Kotlin Gradle Plugin warning. `minSdk` stays at 19.
+- `WifiAP.private` reported WPA3 networks, and any other auth mode the bindings did not know, as open (`private: false`). ESP-IDF sends its raw `wifi_auth_mode_t` (0 to 15 in v5.4), and protobuf decodes values missing from the `WifiAuthMode` enum as `Open`. `private` is now computed from the numeric mode: only Open and OWE (Enhanced Open, which needs no password) count as open, and every other mode, known or not, is private. It also no longer compares enum names, so apps built with `protobuf.omit_enum_names` no longer see every network as private.
 
 ## [1.1.0] - 2026-07-19
 

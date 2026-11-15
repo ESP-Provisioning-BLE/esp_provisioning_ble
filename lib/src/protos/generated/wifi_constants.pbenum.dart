@@ -69,6 +69,10 @@ class WifiAuthMode extends $pb.ProtobufEnum {
       WifiAuthMode._(4, _omitEnumNames ? '' : 'WPA_WPA2_PSK');
   static const WifiAuthMode WPA2_ENTERPRISE =
       WifiAuthMode._(5, _omitEnumNames ? '' : 'WPA2_ENTERPRISE');
+  static const WifiAuthMode WPA3_PSK =
+      WifiAuthMode._(6, _omitEnumNames ? '' : 'WPA3_PSK');
+  static const WifiAuthMode WPA2_WPA3_PSK =
+      WifiAuthMode._(7, _omitEnumNames ? '' : 'WPA2_WPA3_PSK');
 
   static const $core.List<WifiAuthMode> values = <WifiAuthMode>[
     Open,
@@ -77,6 +81,8 @@ class WifiAuthMode extends $pb.ProtobufEnum {
     WPA2_PSK,
     WPA_WPA2_PSK,
     WPA2_ENTERPRISE,
+    WPA3_PSK,
+    WPA2_WPA3_PSK,
   ];
 
   static final $core.Map<$core.int, WifiAuthMode> _byValue =

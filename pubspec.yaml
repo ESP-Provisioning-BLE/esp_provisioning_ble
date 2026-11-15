@@ -32,7 +32,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.ogabrielinacio.esp_provisioning_ble
+        package: dev.espprovble.esp_provisioning_ble
         pluginClass: EspProvisioningBlePlugin
       ios:
         pluginClass: EspProvisioningBlePlugin
