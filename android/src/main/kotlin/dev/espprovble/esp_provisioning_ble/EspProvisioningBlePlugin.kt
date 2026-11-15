@@ -1,4 +1,4 @@
-package com.ogabrielinacio.esp_provisioning_ble
+package dev.espprovble.esp_provisioning_ble
 
 import androidx.annotation.NonNull
 

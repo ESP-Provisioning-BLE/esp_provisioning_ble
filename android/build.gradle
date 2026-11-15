@@ -1,4 +1,4 @@
-group = "com.ogabrielinacio.esp_provisioning_ble"
+group = "dev.espprovble.esp_provisioning_ble"
 version = "1.0-SNAPSHOT"
 
 buildscript {
@@ -35,7 +35,7 @@ if (extensions.findByName("kotlin") == null) {
 }
 
 android {
-    namespace = "com.ogabrielinacio.esp_provisioning_ble"
+    namespace = "dev.espprovble.esp_provisioning_ble"
 
     // 34 is the lowest API level accepted by the androidx libraries that
     // Flutter 3.24 and later bring in, and the highest that AGP releases
