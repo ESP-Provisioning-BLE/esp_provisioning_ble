@@ -14,7 +14,7 @@ env:
   # Lowest Flutter release the package supports, built by the "minimum" entry
   # of the matrices below. This is the only place in CI to change it; keep it
   # equal to the flutter constraint in the environment of pubspec.yaml.
-  FLUTTER_MIN_VERSION: "3.13.0"
+  FLUTTER_MIN_VERSION: "3.29.0"
 
 jobs:
   package:
@@ -43,9 +43,9 @@ jobs:
       # The example targets current Flutter releases (its Dart constraint and
       # its Android project need them) and is tested on stable and beta;
       # compatibility of apps with older Flutter releases is covered by the
-      # android-app job, which creates a fresh app with each version. On a
-      # clean checkout, Flutter 3.13 also fails pub get --no-example (it reads
-      # example/.dart_tool afterwards), so the example is removed here.
+      # android-app job, which creates a fresh app with each version. The
+      # example cannot resolve on the minimum Flutter, and pub get and pub
+      # downgrade resolve it too, so the example is removed here.
       - name: Remove the example
         if: matrix.flutter == 'minimum'
         run: rm -rf example

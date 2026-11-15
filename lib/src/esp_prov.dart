@@ -49,7 +49,9 @@ enum EstablishSessionStatus {
 }
 
 UnexpectedMessageTypeException _unexpectedScanMessage(
-    WiFiScanMsgType expected, WiFiScanPayload received) {
+  WiFiScanMsgType expected,
+  WiFiScanPayload received,
+) {
   return UnexpectedMessageTypeException(
     expectedType: expected.name,
     expectedValue: expected.value,
@@ -127,7 +129,9 @@ class EspProv {
           return EstablishSessionStatus.connected;
         }
         var response = await transport.sendReceive(
-            'prov-session', request.writeToBuffer());
+          'prov-session',
+          request.writeToBuffer(),
+        );
         if (response.isEmpty) {
           throw Exception('Empty response');
         }
@@ -179,7 +183,9 @@ class EspProv {
     var respPayload = WiFiScanPayload.fromBuffer(await security.decrypt(data));
     if (respPayload.msg != WiFiScanMsgType.TypeRespScanStart) {
       throw _unexpectedScanMessage(
-          WiFiScanMsgType.TypeRespScanStart, respPayload);
+        WiFiScanMsgType.TypeRespScanStart,
+        respPayload,
+      );
     }
     return respPayload;
   }
@@ -204,11 +210,12 @@ class EspProv {
   ///
   /// Throws an [UnexpectedMessageTypeException] if the response is not a scan
   /// start response.
-  Future<WiFiScanPayload> startScanRequest(
-      {bool blocking = true,
-      bool passive = false,
-      int groupChannels = 5,
-      int periodMs = 0}) async {
+  Future<WiFiScanPayload> startScanRequest({
+    bool blocking = true,
+    bool passive = false,
+    int groupChannels = 5,
+    int periodMs = 0,
+  }) async {
     WiFiScanPayload payload = WiFiScanPayload();
     payload.msg = WiFiScanMsgType.TypeCmdScanStart;
 
@@ -234,7 +241,9 @@ class EspProv {
     var respPayload = WiFiScanPayload.fromBuffer(await security.decrypt(data));
     if (respPayload.msg != WiFiScanMsgType.TypeRespScanStatus) {
       throw _unexpectedScanMessage(
-          WiFiScanMsgType.TypeRespScanStatus, respPayload);
+        WiFiScanMsgType.TypeRespScanStatus,
+        respPayload,
+      );
     }
     return respPayload;
   }
@@ -265,8 +274,10 @@ class EspProv {
   ///
   /// Throws an [UnexpectedMessageTypeException] if the response is not a scan
   /// result response.
-  Future<List<WifiAP>> scanResultRequest(
-      {int startIndex = 0, int count = 0}) async {
+  Future<List<WifiAP>> scanResultRequest({
+    int startIndex = 0,
+    int count = 0,
+  }) async {
     WiFiScanPayload payload = WiFiScanPayload();
     payload.msg = WiFiScanMsgType.TypeCmdScanResult;
 
@@ -298,11 +309,14 @@ class EspProv {
     var respPayload = WiFiScanPayload.fromBuffer(await security.decrypt(data));
     if (respPayload.msg != WiFiScanMsgType.TypeRespScanResult) {
       throw _unexpectedScanMessage(
-          WiFiScanMsgType.TypeRespScanResult, respPayload);
+        WiFiScanMsgType.TypeRespScanResult,
+        respPayload,
+      );
     }
     List<WifiAP> ret = [];
     for (var entry in respPayload.respScanResult.entries) {
-      ret.add(WifiAP(
+      ret.add(
+        WifiAP(
           ssid: utf8.decode(entry.ssid),
           // Firmware-sourced data, not user input: a length other than 6
           // bytes is treated as "no bssid" rather than thrown, the same way
@@ -310,7 +324,9 @@ class EspProv {
           // break the whole scan.
           bssid: entry.bssid.length == 6 ? _decodeBssid(entry.bssid) : null,
           rssi: entry.rssi,
-          private: _isPrivateAuthMode(_rawAuthMode(entry))));
+          private: _isPrivateAuthMode(_rawAuthMode(entry)),
+        ),
+      );
     }
     return ret;
   }
@@ -328,16 +344,18 @@ class EspProv {
   ///
   /// Throws an [UnexpectedMessageTypeException] if the device answers any of
   /// these requests with a message of another type.
-  Future<List<WifiAP>> scan(
-      {bool blocking = true,
-      bool passive = false,
-      int groupChannels = 5,
-      int periodMs = 0}) async {
+  Future<List<WifiAP>> scan({
+    bool blocking = true,
+    bool passive = false,
+    int groupChannels = 5,
+    int periodMs = 0,
+  }) async {
     await startScanRequest(
-        blocking: blocking,
-        passive: passive,
-        groupChannels: groupChannels,
-        periodMs: periodMs);
+      blocking: blocking,
+      passive: passive,
+      groupChannels: groupChannels,
+      periodMs: periodMs,
+    );
     var status = await scanStatusRequest();
     var resultCount = status.respScanStatus.resultCount;
     List<WifiAP> ret = [];
@@ -374,8 +392,11 @@ class EspProv {
   ///
   /// Throws a [FormatException], before anything is sent, if [bssid] is not
   /// six colon-separated pairs of hexadecimal digits.
-  Future<bool> sendWifiConfig(
-      {required String ssid, required String password, String? bssid}) async {
+  Future<bool> sendWifiConfig({
+    required String ssid,
+    required String password,
+    String? bssid,
+  }) async {
     var payload = WiFiConfigPayload();
     payload.msg = WiFiConfigMsgType.TypeCmdSetConfig;
 
@@ -458,8 +479,9 @@ class EspProv {
 
     if (respPayload.respGetStatus.staState.value == 0) {
       return ConnectionStatus(
-          state: WifiConnectionState.Connected,
-          deviceIp: respPayload.respGetStatus.connected.ip4Addr);
+        state: WifiConnectionState.Connected,
+        deviceIp: respPayload.respGetStatus.connected.ip4Addr,
+      );
     } else if (respPayload.respGetStatus.staState.value == 1) {
       return ConnectionStatus(state: WifiConnectionState.Connecting);
     } else if (respPayload.respGetStatus.staState.value == 2) {
@@ -502,11 +524,16 @@ class EspProv {
   ///
   /// Throws an [ArgumentError], before anything is sent, if [packageSize] is
   /// not greater than zero.
-  Future<Uint8List> sendReceiveCustomData(Uint8List data,
-      {int packageSize = 256}) async {
+  Future<Uint8List> sendReceiveCustomData(
+    Uint8List data, {
+    int packageSize = 256,
+  }) async {
     if (packageSize <= 0) {
       throw ArgumentError.value(
-          packageSize, 'packageSize', 'Must be greater than zero');
+        packageSize,
+        'packageSize',
+        'Must be greater than zero',
+      );
     }
     var remainingData = data.length;
     var offset = 0;
@@ -544,8 +571,9 @@ class EspProv {
   String _decodeBssid(List<int> binaryBssid) =>
       binaryBssid.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':');
 
-  static final RegExp _bssidFormat =
-      RegExp(r'^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}$');
+  static final RegExp _bssidFormat = RegExp(
+    r'^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}$',
+  );
 
   /// Encodes a hexadecimal BSSID into its binary representation.
   ///

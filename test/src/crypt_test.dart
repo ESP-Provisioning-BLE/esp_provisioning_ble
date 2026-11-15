@@ -14,26 +14,26 @@ void main() {
     mockKey = [];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (MethodCall call) async {
-      switch (call.method) {
-        case 'init':
-          mockKey = List<int>.from(
-            (call.arguments as Map)['key'] as Uint8List,
-          );
-          return true;
-        case 'crypt':
-          final data = (call.arguments as Map)['data'] as Uint8List;
-          if (mockKey.isEmpty) return data;
-          // Simulate a symmetric XOR stream cipher using the key bytes.
-          return Uint8List.fromList(
-            List.generate(
-              data.length,
-              (i) => data[i] ^ mockKey[i % mockKey.length],
-            ),
-          );
-        default:
-          return null;
-      }
-    });
+          switch (call.method) {
+            case 'init':
+              mockKey = List<int>.from(
+                (call.arguments as Map)['key'] as Uint8List,
+              );
+              return true;
+            case 'crypt':
+              final data = (call.arguments as Map)['data'] as Uint8List;
+              if (mockKey.isEmpty) return data;
+              // Simulate a symmetric XOR stream cipher using the key bytes.
+              return Uint8List.fromList(
+                List.generate(
+                  data.length,
+                  (i) => data[i] ^ mockKey[i % mockKey.length],
+                ),
+              );
+            default:
+              return null;
+          }
+        });
   });
 
   tearDown(() {
@@ -53,10 +53,7 @@ void main() {
   group('Crypt.crypt', () {
     test('encrypt/decrypt round-trip returns original data', () async {
       final crypt = Crypt();
-      await crypt.init(
-        Uint8List(32)..fillRange(0, 32, 0xAB),
-        Uint8List(16),
-      );
+      await crypt.init(Uint8List(32)..fillRange(0, 32, 0xAB), Uint8List(16));
       final plaintext = Uint8List.fromList([1, 2, 3, 4, 5, 6, 7, 8]);
       final encrypted = await crypt.crypt(plaintext);
       final decrypted = await crypt.crypt(encrypted);
@@ -85,19 +82,21 @@ void main() {
       expect(encrypted1, isNot(equals(encrypted2)));
     });
 
-    test('decrypting with the wrong key produces incorrect plaintext',
-        () async {
-      final crypt = Crypt();
-      final plaintext = Uint8List.fromList([0x01, 0x02, 0x03, 0x04]);
-      final iv = Uint8List(16);
+    test(
+      'decrypting with the wrong key produces incorrect plaintext',
+      () async {
+        final crypt = Crypt();
+        final plaintext = Uint8List.fromList([0x01, 0x02, 0x03, 0x04]);
+        final iv = Uint8List(16);
 
-      await crypt.init(Uint8List(32)..fillRange(0, 32, 0xAA), iv);
-      final encrypted = await crypt.crypt(plaintext);
+        await crypt.init(Uint8List(32)..fillRange(0, 32, 0xAA), iv);
+        final encrypted = await crypt.crypt(plaintext);
 
-      await crypt.init(Uint8List(32)..fillRange(0, 32, 0xBB), iv);
-      final wrongDecrypted = await crypt.crypt(encrypted);
+        await crypt.init(Uint8List(32)..fillRange(0, 32, 0xBB), iv);
+        final wrongDecrypted = await crypt.crypt(encrypted);
 
-      expect(wrongDecrypted, isNot(equals(plaintext)));
-    });
+        expect(wrongDecrypted, isNot(equals(plaintext)));
+      },
+    );
   });
 }

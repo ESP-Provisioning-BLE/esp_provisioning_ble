@@ -88,10 +88,11 @@ class Security1 implements ProvSecurity {
 
   /// Creates a Security 1 scheme with the proof of possession [pop] that
   /// starts its handshake at [sessionState].
-  Security1(
-      {this.pop,
-      this.sessionState = SecurityState.request1,
-      this.verbose = false});
+  Security1({
+    this.pop,
+    this.sessionState = SecurityState.request1,
+    this.verbose = false,
+  });
 
   void _verbose(dynamic data) {
     if (verbose) {
@@ -179,8 +180,9 @@ class Security1 implements ProvSecurity {
     setupRequest.secVer = SecSchemeVersion.SecScheme1;
     await _generateKey();
     SessionCmd0 sc0 = SessionCmd0();
-    List<int> temp =
-        await clientKey.extractPublicKey().then((value) => value.bytes);
+    List<int> temp = await clientKey.extractPublicKey().then(
+      (value) => value.bytes,
+    );
     sc0.clientPubkey = temp;
     Sec1Payload sec1 = Sec1Payload();
     sec1.sc0 = sc0;
@@ -202,16 +204,21 @@ class Security1 implements ProvSecurity {
     if (setupResp.secVer != SecSchemeVersion.SecScheme1) {
       throw Exception('Invalid sec scheme');
     }
-    devicePublicKey = SimplePublicKey(setupResp.sec1.sr0.devicePubkey,
-        type: x25519.keyPairType);
+    devicePublicKey = SimplePublicKey(
+      setupResp.sec1.sr0.devicePubkey,
+      type: x25519.keyPairType,
+    );
     deviceRandom = Uint8List.fromList(setupResp.sec1.sr0.deviceRandom);
 
     _verbose(
-        'setup0Response:Device public key ${devicePublicKey.bytes.toString()}');
+      'setup0Response:Device public key ${devicePublicKey.bytes.toString()}',
+    );
     _verbose('setup0Response:Device random ${deviceRandom.toString()}');
 
     final sharedKey = await x25519.sharedSecretKey(
-        keyPair: clientKey, remotePublicKey: devicePublicKey);
+      keyPair: clientKey,
+      remotePublicKey: devicePublicKey,
+    );
     var sharedK = await sharedKey.extractBytes();
     _verbose('setup0Response: Shared key calculated: ${sharedK.toString()}');
     if (pop != null) {
@@ -219,14 +226,18 @@ class Security1 implements ProvSecurity {
       sink.add(utf8.encode(pop!));
       sink.close();
       final hash = await sink.hash();
-      sharedK =
-          _xor(Uint8List.fromList(sharedK), Uint8List.fromList(hash.bytes));
+      sharedK = _xor(
+        Uint8List.fromList(sharedK),
+        Uint8List.fromList(hash.bytes),
+      );
       _verbose(
-          'setup0Response: pop: $pop, hash: ${hash.bytes.toString()} sharedK: ${sharedK.toString()}');
+        'setup0Response: pop: $pop, hash: ${hash.bytes.toString()} sharedK: ${sharedK.toString()}',
+      );
     }
     await crypt.init(Uint8List.fromList(sharedK), deviceRandom);
     _verbose(
-        'setup0Response: cipherSecretKey: ${sharedK.toString()} cipherNonce: ${deviceRandom.toString()}');
+      'setup0Response: cipherSecretKey: ${sharedK.toString()} cipherNonce: ${deviceRandom.toString()}',
+    );
     return setupResp;
   }
 
@@ -264,11 +275,13 @@ class Security1 implements ProvSecurity {
       final deviceVerify = setupResp.sec1.sr1.deviceVerifyData;
       _verbose('Device verify: ${deviceVerify.toString()}');
       final encClientPubkey = await decrypt(
-          Uint8List.fromList(setupResp.sec1.sr1.deviceVerifyData));
+        Uint8List.fromList(setupResp.sec1.sr1.deviceVerifyData),
+      );
       _verbose('Enc client pubkey: ${encClientPubkey.toString()}');
       Function eq = const ListEquality().equals;
-      List<int> temp =
-          await clientKey.extractPublicKey().then((value) => value.bytes);
+      List<int> temp = await clientKey.extractPublicKey().then(
+        (value) => value.bytes,
+      );
       if (!eq(encClientPubkey, temp)) {
         throw Exception('Mismatch in device verify');
       }

@@ -22,23 +22,24 @@ class MockProvSecurity extends Mock implements ProvSecurity {}
 // Protobuf response builders
 
 Uint8List _scanStartResp() => Uint8List.fromList(
-      (WiFiScanPayload()
-            ..msg = WiFiScanMsgType.TypeRespScanStart
-            ..respScanStart = RespScanStart())
-          .writeToBuffer(),
-    );
+  (WiFiScanPayload()
+        ..msg = WiFiScanMsgType.TypeRespScanStart
+        ..respScanStart = RespScanStart())
+      .writeToBuffer(),
+);
 
 Uint8List _scanStatusResp(int resultCount) => Uint8List.fromList(
-      (WiFiScanPayload()
-            ..msg = WiFiScanMsgType.TypeRespScanStatus
-            ..respScanStatus = (RespScanStatus()..resultCount = resultCount))
-          .writeToBuffer(),
-    );
+  (WiFiScanPayload()
+        ..msg = WiFiScanMsgType.TypeRespScanStatus
+        ..respScanStatus = (RespScanStatus()..resultCount = resultCount))
+      .writeToBuffer(),
+);
 
 Uint8List _scanResultResp(List<WiFiScanResult> entries) {
-  final payload = WiFiScanPayload()
-    ..msg = WiFiScanMsgType.TypeRespScanResult
-    ..respScanResult = (RespScanResult()..entries.addAll(entries));
+  final payload =
+      WiFiScanPayload()
+        ..msg = WiFiScanMsgType.TypeRespScanResult
+        ..respScanResult = (RespScanResult()..entries.addAll(entries));
   return Uint8List.fromList(payload.writeToBuffer());
 }
 
@@ -84,18 +85,18 @@ const _idfAuthModes = {
 const _idfOpenAuthModes = {0, 9};
 
 Uint8List _wifiConfigResp(Status status) => Uint8List.fromList(
-      (WiFiConfigPayload()
-            ..msg = WiFiConfigMsgType.TypeRespSetConfig
-            ..respSetConfig = (RespSetConfig()..status = status))
-          .writeToBuffer(),
-    );
+  (WiFiConfigPayload()
+        ..msg = WiFiConfigMsgType.TypeRespSetConfig
+        ..respSetConfig = (RespSetConfig()..status = status))
+      .writeToBuffer(),
+);
 
 Uint8List _applyConfigResp(Status status) => Uint8List.fromList(
-      (WiFiConfigPayload()
-            ..msg = WiFiConfigMsgType.TypeRespApplyConfig
-            ..respApplyConfig = (RespApplyConfig()..status = status))
-          .writeToBuffer(),
-    );
+  (WiFiConfigPayload()
+        ..msg = WiFiConfigMsgType.TypeRespApplyConfig
+        ..respApplyConfig = (RespApplyConfig()..status = status))
+      .writeToBuffer(),
+);
 
 Uint8List _getStatusResp(
   proto.WifiStationState state, {
@@ -133,12 +134,13 @@ void main() {
     espProv = EspProv(transport: transport, security: security);
 
     // Default: encrypt is a passthrough so requests remain readable.
-    when(() => security.encrypt(any())).thenAnswer(
-      (inv) async => inv.positionalArguments.first as Uint8List,
-    );
+    when(
+      () => security.encrypt(any()),
+    ).thenAnswer((inv) async => inv.positionalArguments.first as Uint8List);
     // Default: sendReceive returns a non-empty byte so no "empty response" throws.
-    when(() => transport.sendReceive(any(), any()))
-        .thenAnswer((_) async => Uint8List.fromList([0]));
+    when(
+      () => transport.sendReceive(any(), any()),
+    ).thenAnswer((_) async => Uint8List.fromList([0]));
   });
 
   group('startScanWiFi', () {
@@ -158,10 +160,11 @@ void main() {
     });
 
     test('parses AP entries into WifiAP objects', () async {
-      final entry = WiFiScanResult()
-        ..ssid = utf8.encode('HomeWifi')
-        ..rssi = -55
-        ..auth = proto.WifiAuthMode.WPA2_PSK;
+      final entry =
+          WiFiScanResult()
+            ..ssid = utf8.encode('HomeWifi')
+            ..rssi = -55
+            ..auth = proto.WifiAuthMode.WPA2_PSK;
 
       stubDecryptSequence([
         _scanStartResp(),
@@ -179,11 +182,12 @@ void main() {
     });
 
     test('decodes a present bssid into a colon-separated hex string', () async {
-      final entry = WiFiScanResult()
-        ..ssid = utf8.encode('HomeWifi')
-        ..rssi = -55
-        ..bssid = [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
-        ..auth = proto.WifiAuthMode.WPA2_PSK;
+      final entry =
+          WiFiScanResult()
+            ..ssid = utf8.encode('HomeWifi')
+            ..rssi = -55
+            ..bssid = [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
+            ..auth = proto.WifiAuthMode.WPA2_PSK;
 
       stubDecryptSequence([
         _scanStartResp(),
@@ -195,50 +199,57 @@ void main() {
       expect(result.first.bssid, equals('aa:bb:cc:dd:ee:ff'));
     });
 
-    test('zero-pads bssid bytes below 0x10 instead of dropping the digit',
-        () async {
-      // Regression test: int.toRadixString(16) does not zero-pad, so a byte
-      // like 0x05 used to decode to "5" instead of "05", producing a bssid
-      // string that was not valid MAC notation.
-      final entry = WiFiScanResult()
-        ..ssid = utf8.encode('HomeWifi')
-        ..rssi = -55
-        ..bssid = [0xaa, 0x05, 0xcc, 0x00, 0xee, 0xff]
-        ..auth = proto.WifiAuthMode.WPA2_PSK;
+    test(
+      'zero-pads bssid bytes below 0x10 instead of dropping the digit',
+      () async {
+        // Regression test: int.toRadixString(16) does not zero-pad, so a byte
+        // like 0x05 used to decode to "5" instead of "05", producing a bssid
+        // string that was not valid MAC notation.
+        final entry =
+            WiFiScanResult()
+              ..ssid = utf8.encode('HomeWifi')
+              ..rssi = -55
+              ..bssid = [0xaa, 0x05, 0xcc, 0x00, 0xee, 0xff]
+              ..auth = proto.WifiAuthMode.WPA2_PSK;
 
-      stubDecryptSequence([
-        _scanStartResp(),
-        _scanStatusResp(1),
-        _scanResultResp([entry]),
-      ]);
+        stubDecryptSequence([
+          _scanStartResp(),
+          _scanStatusResp(1),
+          _scanResultResp([entry]),
+        ]);
 
-      final result = await espProv.startScanWiFi();
-      expect(result.first.bssid, equals('aa:05:cc:00:ee:ff'));
-    });
+        final result = await espProv.startScanWiFi();
+        expect(result.first.bssid, equals('aa:05:cc:00:ee:ff'));
+      },
+    );
 
-    test('treats a bssid of the wrong length as absent instead of garbage',
-        () async {
-      final entry = WiFiScanResult()
-        ..ssid = utf8.encode('HomeWifi')
-        ..rssi = -55
-        ..bssid = [0xaa, 0xbb, 0xcc] // malformed: not 6 bytes
-        ..auth = proto.WifiAuthMode.WPA2_PSK;
+    test(
+      'treats a bssid of the wrong length as absent instead of garbage',
+      () async {
+        final entry =
+            WiFiScanResult()
+              ..ssid = utf8.encode('HomeWifi')
+              ..rssi = -55
+              ..bssid = [0xaa, 0xbb, 0xcc] // malformed: not 6 bytes
+              ..auth = proto.WifiAuthMode.WPA2_PSK;
 
-      stubDecryptSequence([
-        _scanStartResp(),
-        _scanStatusResp(1),
-        _scanResultResp([entry]),
-      ]);
+        stubDecryptSequence([
+          _scanStartResp(),
+          _scanStatusResp(1),
+          _scanResultResp([entry]),
+        ]);
 
-      final result = await espProv.startScanWiFi();
-      expect(result.first.bssid, isNull);
-    });
+        final result = await espProv.startScanWiFi();
+        expect(result.first.bssid, isNull);
+      },
+    );
 
     test('marks open network as not private', () async {
-      final entry = WiFiScanResult()
-        ..ssid = utf8.encode('CafeWifi')
-        ..rssi = -70
-        ..auth = proto.WifiAuthMode.Open;
+      final entry =
+          WiFiScanResult()
+            ..ssid = utf8.encode('CafeWifi')
+            ..rssi = -70
+            ..auth = proto.WifiAuthMode.Open;
 
       stubDecryptSequence([
         _scanStartResp(),
@@ -253,10 +264,11 @@ void main() {
     test('fetches results in batches of 4 when resultCount > 4', () async {
       final entries = List.generate(
         5,
-        (i) => WiFiScanResult()
-          ..ssid = utf8.encode('AP$i')
-          ..rssi = -50 - i * 5
-          ..auth = proto.WifiAuthMode.WPA2_PSK,
+        (i) =>
+            WiFiScanResult()
+              ..ssid = utf8.encode('AP$i')
+              ..rssi = -50 - i * 5
+              ..auth = proto.WifiAuthMode.WPA2_PSK,
       );
 
       stubDecryptSequence([
@@ -286,8 +298,9 @@ void main() {
 
   group('WifiAP.private', () {
     Future<WifiAP> parseEntry(WiFiScanResult entry) async {
-      when(() => security.decrypt(any()))
-          .thenAnswer((_) async => _scanResultResp([entry]));
+      when(
+        () => security.decrypt(any()),
+      ).thenAnswer((_) async => _scanResultResp([entry]));
       final result = await espProv.scanResultResponse(Uint8List(0));
       return result.single;
     }
@@ -331,9 +344,9 @@ void main() {
 
   group('sendWifiConfig', () {
     void stubConfigResponse({Status status = Status.Success}) {
-      when(() => security.decrypt(any())).thenAnswer(
-        (_) async => _wifiConfigResp(status),
-      );
+      when(
+        () => security.decrypt(any()),
+      ).thenAnswer((_) async => _wifiConfigResp(status));
     }
 
     test('serialises SSID and password into the protobuf request', () async {
@@ -345,7 +358,9 @@ void main() {
       final payload = WiFiConfigPayload.fromBuffer(captured.first as Uint8List);
       expect(utf8.decode(payload.cmdSetConfig.ssid), equals('MySSID'));
       expect(
-          utf8.decode(payload.cmdSetConfig.passphrase), equals('SecretPass'));
+        utf8.decode(payload.cmdSetConfig.passphrase),
+        equals('SecretPass'),
+      );
     });
 
     test('sends request to prov-config endpoint', () async {
@@ -357,15 +372,21 @@ void main() {
     test('returns true when device responds with Success', () async {
       stubConfigResponse(status: Status.Success);
       expect(
-          await espProv.sendWifiConfig(ssid: 'SSID', password: 'pass'), isTrue);
+        await espProv.sendWifiConfig(ssid: 'SSID', password: 'pass'),
+        isTrue,
+      );
     });
 
-    test('returns false when device responds with a non-Success status',
-        () async {
-      stubConfigResponse(status: Status.InvalidArgument);
-      expect(await espProv.sendWifiConfig(ssid: 'SSID', password: 'pass'),
-          isFalse);
-    });
+    test(
+      'returns false when device responds with a non-Success status',
+      () async {
+        stubConfigResponse(status: Status.InvalidArgument);
+        expect(
+          await espProv.sendWifiConfig(ssid: 'SSID', password: 'pass'),
+          isFalse,
+        );
+      },
+    );
 
     test('encodes bssid into the protobuf request when provided', () async {
       stubConfigResponse();
@@ -394,8 +415,7 @@ void main() {
       expect(payload.cmdSetConfig.bssid, isEmpty);
     });
 
-    test(
-        'rejects a malformed bssid with a FormatException without hitting '
+    test('rejects a malformed bssid with a FormatException without hitting '
         'the transport', () async {
       expect(
         espProv.sendWifiConfig(
@@ -412,9 +432,9 @@ void main() {
 
   group('applyWifiConfig', () {
     void stubApplyResponse({Status status = Status.Success}) {
-      when(() => security.decrypt(any())).thenAnswer(
-        (_) async => _applyConfigResp(status),
-      );
+      when(
+        () => security.decrypt(any()),
+      ).thenAnswer((_) async => _applyConfigResp(status));
     }
 
     test('sends request to prov-config endpoint', () async {
@@ -428,18 +448,23 @@ void main() {
       expect(await espProv.applyWifiConfig(), isTrue);
     });
 
-    test('returns false when device responds with a non-Success status',
-        () async {
-      stubApplyResponse(status: Status.InvalidArgument);
-      expect(await espProv.applyWifiConfig(), isFalse);
-    });
+    test(
+      'returns false when device responds with a non-Success status',
+      () async {
+        stubApplyResponse(status: Status.InvalidArgument);
+        expect(await espProv.applyWifiConfig(), isFalse);
+      },
+    );
   });
 
   group('getStatus', () {
     test('returns Connected with device IP', () async {
-      when(() => security.decrypt(any())).thenAnswer((_) async =>
-          _getStatusResp(proto.WifiStationState.Connected,
-              ip4Addr: '192.168.1.1'));
+      when(() => security.decrypt(any())).thenAnswer(
+        (_) async => _getStatusResp(
+          proto.WifiStationState.Connected,
+          ip4Addr: '192.168.1.1',
+        ),
+      );
 
       final result = await espProv.getStatus();
 
@@ -449,7 +474,8 @@ void main() {
 
     test('returns Connecting', () async {
       when(() => security.decrypt(any())).thenAnswer(
-          (_) async => _getStatusResp(proto.WifiStationState.Connecting));
+        (_) async => _getStatusResp(proto.WifiStationState.Connecting),
+      );
 
       final result = await espProv.getStatus();
       expect(result.state, equals(WifiConnectionState.Connecting));
@@ -457,16 +483,20 @@ void main() {
 
     test('returns Disconnected', () async {
       when(() => security.decrypt(any())).thenAnswer(
-          (_) async => _getStatusResp(proto.WifiStationState.Disconnected));
+        (_) async => _getStatusResp(proto.WifiStationState.Disconnected),
+      );
 
       final result = await espProv.getStatus();
       expect(result.state, equals(WifiConnectionState.Disconnected));
     });
 
     test('returns ConnectionFailed with AuthError', () async {
-      when(() => security.decrypt(any())).thenAnswer((_) async =>
-          _getStatusResp(proto.WifiStationState.ConnectionFailed,
-              failReason: proto.WifiConnectFailedReason.AuthError));
+      when(() => security.decrypt(any())).thenAnswer(
+        (_) async => _getStatusResp(
+          proto.WifiStationState.ConnectionFailed,
+          failReason: proto.WifiConnectFailedReason.AuthError,
+        ),
+      );
 
       final result = await espProv.getStatus();
       expect(result.state, equals(WifiConnectionState.ConnectionFailed));
@@ -474,41 +504,50 @@ void main() {
     });
 
     test('returns ConnectionFailed with NetworkNotFound', () async {
-      when(() => security.decrypt(any())).thenAnswer((_) async =>
-          _getStatusResp(proto.WifiStationState.ConnectionFailed,
-              failReason: proto.WifiConnectFailedReason.NetworkNotFound));
+      when(() => security.decrypt(any())).thenAnswer(
+        (_) async => _getStatusResp(
+          proto.WifiStationState.ConnectionFailed,
+          failReason: proto.WifiConnectFailedReason.NetworkNotFound,
+        ),
+      );
 
       final result = await espProv.getStatus();
       expect(result.state, equals(WifiConnectionState.ConnectionFailed));
       expect(
-          result.failedReason, equals(WifiConnectFailedReason.NetworkNotFound));
+        result.failedReason,
+        equals(WifiConnectFailedReason.NetworkNotFound),
+      );
     });
   });
 
   group('sendReceiveCustomData', () {
     setUp(() {
-      when(() => security.decrypt(any())).thenAnswer(
-        (inv) async => inv.positionalArguments.first as Uint8List,
-      );
+      when(
+        () => security.decrypt(any()),
+      ).thenAnswer((inv) async => inv.positionalArguments.first as Uint8List);
     });
 
-    test('sends data to custom-data endpoint and returns decrypted response',
-        () async {
-      when(() => transport.sendReceive('custom-data', any()))
-          .thenAnswer((_) async => Uint8List.fromList([7, 8, 9]));
+    test(
+      'sends data to custom-data endpoint and returns decrypted response',
+      () async {
+        when(
+          () => transport.sendReceive('custom-data', any()),
+        ).thenAnswer((_) async => Uint8List.fromList([7, 8, 9]));
 
-      final result = await espProv.sendReceiveCustomData(
-        Uint8List.fromList([1, 2, 3]),
-      );
+        final result = await espProv.sendReceiveCustomData(
+          Uint8List.fromList([1, 2, 3]),
+        );
 
-      expect(result, equals(Uint8List.fromList([7, 8, 9])));
-      verify(() => transport.sendReceive('custom-data', any())).called(1);
-    });
+        expect(result, equals(Uint8List.fromList([7, 8, 9])));
+        verify(() => transport.sendReceive('custom-data', any())).called(1);
+      },
+    );
 
     test('splits data into chunks and accumulates responses', () async {
       var call = 0;
-      when(() => transport.sendReceive('custom-data', any()))
-          .thenAnswer((_) async => Uint8List.fromList([(call++ + 1) * 10]));
+      when(
+        () => transport.sendReceive('custom-data', any()),
+      ).thenAnswer((_) async => Uint8List.fromList([(call++ + 1) * 10]));
 
       final result = await espProv.sendReceiveCustomData(
         Uint8List.fromList([1, 2, 3, 4, 5]),
@@ -520,8 +559,9 @@ void main() {
     });
 
     test('skips empty transport responses', () async {
-      when(() => transport.sendReceive('custom-data', any()))
-          .thenAnswer((_) async => Uint8List(0));
+      when(
+        () => transport.sendReceive('custom-data', any()),
+      ).thenAnswer((_) async => Uint8List(0));
 
       final result = await espProv.sendReceiveCustomData(
         Uint8List.fromList([1, 2, 3]),
@@ -532,35 +572,42 @@ void main() {
     });
 
     for (final packageSize in [0, -1]) {
-      test('throws ArgumentError for packageSize $packageSize without sending',
-          () async {
-        await expectLater(
-          espProv.sendReceiveCustomData(
-            Uint8List.fromList([1, 2, 3]),
-            packageSize: packageSize,
-          ),
-          throwsA(isA<ArgumentError>()
-              .having((e) => e.name, 'name', 'packageSize')
-              .having((e) => e.invalidValue, 'invalidValue', packageSize)),
-        );
-        verifyNever(() => transport.sendReceive(any(), any()));
-        verifyNever(() => security.encrypt(any()));
-      });
+      test(
+        'throws ArgumentError for packageSize $packageSize without sending',
+        () async {
+          await expectLater(
+            espProv.sendReceiveCustomData(
+              Uint8List.fromList([1, 2, 3]),
+              packageSize: packageSize,
+            ),
+            throwsA(
+              isA<ArgumentError>()
+                  .having((e) => e.name, 'name', 'packageSize')
+                  .having((e) => e.invalidValue, 'invalidValue', packageSize),
+            ),
+          );
+          verifyNever(() => transport.sendReceive(any(), any()));
+          verifyNever(() => security.encrypt(any()));
+        },
+      );
     }
 
-    test('throws ArgumentError for packageSize 0 even with empty data',
-        () async {
-      await expectLater(
-        espProv.sendReceiveCustomData(Uint8List(0), packageSize: 0),
-        throwsArgumentError,
-      );
-      verifyNever(() => transport.sendReceive(any(), any()));
-    });
+    test(
+      'throws ArgumentError for packageSize 0 even with empty data',
+      () async {
+        await expectLater(
+          espProv.sendReceiveCustomData(Uint8List(0), packageSize: 0),
+          throwsArgumentError,
+        );
+        verifyNever(() => transport.sendReceive(any(), any()));
+      },
+    );
 
     test('packageSize 1 sends one byte per request', () async {
       final sent = <List<int>>[];
-      when(() => transport.sendReceive('custom-data', any()))
-          .thenAnswer((inv) async {
+      when(() => transport.sendReceive('custom-data', any())).thenAnswer((
+        inv,
+      ) async {
         sent.add(List<int>.from(inv.positionalArguments[1] as Uint8List));
         return Uint8List.fromList([sent.length]);
       });
@@ -571,25 +618,29 @@ void main() {
       );
 
       expect(
-          sent,
-          equals([
-            [1],
-            [2],
-            [3]
-          ]));
+        sent,
+        equals([
+          [1],
+          [2],
+          [3],
+        ]),
+      );
       expect(result, equals(Uint8List.fromList([1, 2, 3])));
     });
   });
 
   group('unexpected message type', () {
     // Each site expects one response type and is fed another one.
-    final sites = <String,
-        ({
-      Future<Object?> Function(Uint8List) call,
-      WiFiScanMsgType expected,
-      Uint8List Function() wrong,
-      WiFiScanMsgType actual,
-    })>{};
+    final sites =
+        <
+          String,
+          ({
+            Future<Object?> Function(Uint8List) call,
+            WiFiScanMsgType expected,
+            Uint8List Function() wrong,
+            WiFiScanMsgType actual,
+          })
+        >{};
 
     setUp(() {
       sites
@@ -659,9 +710,10 @@ void main() {
           () async {
             final site = sites[name]!;
             final wrong = site.wrong();
-            final legacy = Exception(
-              'Invalid expected message type ${WiFiScanPayload.fromBuffer(wrong)}',
-            ).toString();
+            final legacy =
+                Exception(
+                  'Invalid expected message type ${WiFiScanPayload.fromBuffer(wrong)}',
+                ).toString();
 
             await expectLater(
               site.call(wrong),
@@ -724,30 +776,35 @@ void main() {
 
   group('establishSession', () {
     test(
-        'returns connected immediately when the session is already finished (idempotent)',
-        () async {
-      when(() => transport.checkConnect()).thenAnswer((_) async => true);
-      when(() => security.securitySession(any())).thenAnswer((_) async => null);
+      'returns connected immediately when the session is already finished (idempotent)',
+      () async {
+        when(() => transport.checkConnect()).thenAnswer((_) async => true);
+        when(
+          () => security.securitySession(any()),
+        ).thenAnswer((_) async => null);
 
-      final status = await espProv.establishSession();
+        final status = await espProv.establishSession();
 
-      expect(status, EstablishSessionStatus.connected);
-      // Idempotent: no extra BLE round-trip is performed.
-      verifyNever(() => transport.sendReceive(any(), any()));
-    });
+        expect(status, EstablishSessionStatus.connected);
+        // Idempotent: no extra BLE round-trip is performed.
+        verifyNever(() => transport.sendReceive(any(), any()));
+      },
+    );
 
     test(
-        'returns keymismatch when the handshake throws but the link is still up',
-        () async {
-      when(() => transport.checkConnect()).thenAnswer((_) async => true);
-      when(() => security.securitySession(any()))
-          .thenThrow(Exception('bad pop'));
+      'returns keymismatch when the handshake throws but the link is still up',
+      () async {
+        when(() => transport.checkConnect()).thenAnswer((_) async => true);
+        when(
+          () => security.securitySession(any()),
+        ).thenThrow(Exception('bad pop'));
 
-      expect(
-        await espProv.establishSession(),
-        EstablishSessionStatus.keymismatch,
-      );
-    });
+        expect(
+          await espProv.establishSession(),
+          EstablishSessionStatus.keymismatch,
+        );
+      },
+    );
 
     test('returns disconnected when the transport is not connected', () async {
       when(() => transport.checkConnect()).thenAnswer((_) async => false);

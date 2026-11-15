@@ -6,7 +6,7 @@ By participating you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## Getting set up
 
-You need the Flutter SDK on the stable channel; the package targets Dart `>=3.1.0`.
+You need the Flutter SDK on the stable channel; the package targets Dart `>=3.7.0` (Flutter 3.29 or later).
 
 ```sh
 git clone https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble.git

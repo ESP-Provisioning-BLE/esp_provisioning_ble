@@ -66,7 +66,7 @@ dependencies:
   esp_provisioning_ble: ^1.2.0
 ```
 
-It requires Flutter 3.13 or later (Dart 3.1 or later). On Android the plugin's `minSdk` is 19; your app's own `minSdk` may be higher.
+It requires Flutter 3.29 or later (Dart 3.7 or later). On Android the plugin's `minSdk` is 19; your app's own `minSdk` may be higher.
 
 ## Getting started
 
