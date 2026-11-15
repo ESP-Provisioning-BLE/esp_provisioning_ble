@@ -39,10 +39,19 @@ jobs:
           channel: ${{ matrix.flutter == 'beta' && 'beta' || 'stable' }}
           flutter-version: ${{ matrix.flutter == 'minimum' && env.FLUTTER_MIN_VERSION || '' }}
 
-      # example/ requires a newer Dart than the minimum supported one, so the
-      # minimum entry resolves the package alone.
+      # This entry tests the package alone, on the oldest Flutter it supports.
+      # The example targets current Flutter releases (its Dart constraint and
+      # its Android project need them) and is tested on stable and beta;
+      # compatibility of apps with older Flutter releases is covered by the
+      # android-app job, which creates a fresh app with each version. On a
+      # clean checkout, Flutter 3.13 also fails pub get --no-example (it reads
+      # example/.dart_tool afterwards), so the example is removed here.
+      - name: Remove the example
+        if: matrix.flutter == 'minimum'
+        run: rm -rf example
+
       - name: Install dependencies
-        run: flutter pub get ${{ matrix.flutter == 'minimum' && '--no-example' || '' }}
+        run: flutter pub get
 
       # The formatter output depends on the Dart version: check it on stable only.
       - name: Verify formatting
@@ -82,7 +91,7 @@ jobs:
       # constraints.
       - name: Downgrade dependencies to their lowest allowed versions
         if: matrix.flutter == 'minimum'
-        run: flutter pub downgrade --no-example
+        run: flutter pub downgrade
 
       - name: Analyze with downgraded dependencies
         if: matrix.flutter == 'minimum'
