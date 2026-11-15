@@ -10,11 +10,23 @@ import 'protos/generated/wifi_config.pb.dart';
 import 'protos/generated/wifi_scan.pb.dart';
 import 'security.dart';
 import 'transport.dart';
+import 'unexpected_message_type_exception.dart';
 
 enum EstablishSessionStatus {
   connected,
   disconnected,
   keymismatch,
+}
+
+UnexpectedMessageTypeException _unexpectedScanMessage(
+    WiFiScanMsgType expected, WiFiScanPayload received) {
+  return UnexpectedMessageTypeException(
+    expectedType: expected.name,
+    expectedValue: expected.value,
+    actualType: received.msg.name,
+    actualValue: received.msg.value,
+    payload: received.toString(),
+  );
 }
 
 class EspProv {
@@ -63,7 +75,8 @@ class EspProv {
   Future<WiFiScanPayload> startScanResponse(Uint8List data) async {
     var respPayload = WiFiScanPayload.fromBuffer(await security.decrypt(data));
     if (respPayload.msg != WiFiScanMsgType.TypeRespScanStart) {
-      throw Exception('Invalid expected message type $respPayload');
+      throw _unexpectedScanMessage(
+          WiFiScanMsgType.TypeRespScanStart, respPayload);
     }
     return respPayload;
   }
@@ -90,7 +103,8 @@ class EspProv {
   Future<WiFiScanPayload> scanStatusResponse(Uint8List data) async {
     var respPayload = WiFiScanPayload.fromBuffer(await security.decrypt(data));
     if (respPayload.msg != WiFiScanMsgType.TypeRespScanStatus) {
-      throw Exception('Invalid expected message type $respPayload');
+      throw _unexpectedScanMessage(
+          WiFiScanMsgType.TypeRespScanStatus, respPayload);
     }
     return respPayload;
   }
@@ -121,7 +135,8 @@ class EspProv {
   Future<List<WifiAP>> scanResultResponse(Uint8List data) async {
     var respPayload = WiFiScanPayload.fromBuffer(await security.decrypt(data));
     if (respPayload.msg != WiFiScanMsgType.TypeRespScanResult) {
-      throw Exception('Invalid expected message type $respPayload');
+      throw _unexpectedScanMessage(
+          WiFiScanMsgType.TypeRespScanResult, respPayload);
     }
     List<WifiAP> ret = [];
     for (var entry in respPayload.respScanResult.entries) {

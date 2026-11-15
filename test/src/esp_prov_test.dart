@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:esp_provisioning_ble/src/esp_prov.dart';
 import 'package:esp_provisioning_ble/src/transport.dart';
+import 'package:esp_provisioning_ble/esp_provisioning_ble.dart'
+    show UnexpectedMessageTypeException;
 import 'package:esp_provisioning_ble/src/security.dart';
 import 'package:esp_provisioning_ble/src/protos/generated/wifi_scan.pb.dart';
 import 'package:esp_provisioning_ble/src/protos/generated/wifi_config.pb.dart';
@@ -527,6 +529,147 @@ void main() {
 
       expect(result, isEmpty);
       verifyNever(() => security.decrypt(any()));
+    });
+  });
+
+  group('unexpected message type', () {
+    // Each site expects one response type and is fed another one.
+    final sites = <String,
+        ({
+      Future<Object?> Function(Uint8List) call,
+      WiFiScanMsgType expected,
+      Uint8List Function() wrong,
+      WiFiScanMsgType actual,
+    })>{};
+
+    setUp(() {
+      sites
+        ..clear()
+        ..['startScanResponse'] = (
+          call: (d) => espProv.startScanResponse(d),
+          expected: WiFiScanMsgType.TypeRespScanStart,
+          wrong: () => _scanStatusResp(3),
+          actual: WiFiScanMsgType.TypeRespScanStatus,
+        )
+        ..['scanStatusResponse'] = (
+          call: (d) => espProv.scanStatusResponse(d),
+          expected: WiFiScanMsgType.TypeRespScanStatus,
+          wrong: _scanStartResp,
+          actual: WiFiScanMsgType.TypeRespScanStart,
+        )
+        ..['scanResultResponse'] = (
+          call: (d) => espProv.scanResultResponse(d),
+          expected: WiFiScanMsgType.TypeRespScanResult,
+          wrong: _scanStartResp,
+          actual: WiFiScanMsgType.TypeRespScanStart,
+        );
+      when(
+        () => security.decrypt(any()),
+      ).thenAnswer((inv) async => inv.positionalArguments.first as Uint8List);
+    });
+
+    for (final name in [
+      'startScanResponse',
+      'scanStatusResponse',
+      'scanResultResponse',
+    ]) {
+      group(name, () {
+        test(
+          'throws an UnexpectedMessageTypeException with core-typed fields',
+          () async {
+            final site = sites[name]!;
+            final wrong = site.wrong();
+
+            await expectLater(
+              site.call(wrong),
+              throwsA(
+                isA<UnexpectedMessageTypeException>()
+                    .having(
+                      (e) => e.expectedType,
+                      'expectedType',
+                      site.expected.name,
+                    )
+                    .having(
+                      (e) => e.expectedValue,
+                      'expectedValue',
+                      site.expected.value,
+                    )
+                    .having((e) => e.actualType, 'actualType', site.actual.name)
+                    .having(
+                      (e) => e.actualValue,
+                      'actualValue',
+                      site.actual.value,
+                    ),
+              ),
+            );
+          },
+        );
+
+        test(
+          'keeps the exact message of the plain Exception it replaces',
+          () async {
+            final site = sites[name]!;
+            final wrong = site.wrong();
+            final legacy = Exception(
+              'Invalid expected message type ${WiFiScanPayload.fromBuffer(wrong)}',
+            ).toString();
+
+            await expectLater(
+              site.call(wrong),
+              throwsA(predicate((e) => e.toString() == legacy)),
+            );
+            // Same text, same prefix as `Exception(...)`.
+            expect(
+              legacy,
+              startsWith('Exception: Invalid expected message type'),
+            );
+          },
+        );
+
+        test('is still caught by `on Exception` and a bare `catch`', () async {
+          final site = sites[name]!;
+          final wrong = site.wrong();
+
+          Object? viaOnException;
+          try {
+            await site.call(wrong);
+          } on Exception catch (e) {
+            viaOnException = e;
+          }
+          expect(viaOnException, isA<UnexpectedMessageTypeException>());
+
+          Object? viaCatch;
+          try {
+            await site.call(wrong);
+          } catch (e) {
+            viaCatch = e;
+          }
+          expect(viaCatch, isA<UnexpectedMessageTypeException>());
+          expect(viaCatch, isA<Exception>());
+          expect(() => site.call(wrong), throwsException);
+        });
+      });
+    }
+
+    test('startScanWiFi surfaces the typed exception', () async {
+      var call = 0;
+      final responses = [_scanStatusResp(0)];
+      when(
+        () => security.decrypt(any()),
+      ).thenAnswer((_) async => responses[call++]);
+
+      await expectLater(
+        espProv.startScanWiFi(),
+        throwsA(
+          isA<UnexpectedMessageTypeException>()
+              .having(
+                (e) => e.expectedType,
+                'expectedType',
+                'TypeRespScanStart',
+              )
+              .having((e) => e.actualType, 'actualType', 'TypeRespScanStatus'),
+        ),
+      );
     });
   });
 
