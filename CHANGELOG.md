@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Dartdoc comments for the whole public API, covering what each method sends, returns and throws, plus documentation in the README and the API docs that the device firmware decides whether a `bssid` passed to `sendWifiConfig` is used (ESP-IDF's stock provisioning manager drops it and connects by SSID), that the plugin does not handle the ESP32's Wi-Fi connection retries and what that means for an app ([#13](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/13)), and when `establishSession` returns each `EstablishSessionStatus` ([#11](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/11)).
 
+### Fixed
+
+- `sendReceiveCustomData` throws an `ArgumentError` naming `packageSize`, before sending anything, when `packageSize` is not greater than zero. With `0` and non-empty data it used to loop forever sending empty chunks to the device, and a negative value failed with a `RangeError` about an unrelated `end` argument ([#68](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/68)).
+
 ## [1.2.0] - 2026-11-15
 
 This release makes the plugin build again on Android with current Flutter releases, adds `Security0` for devices provisioned without security, reports WPA3 networks correctly in scan results, and throws a typed exception when a scan response has an unexpected message type. It also declares Flutter 3.13.0 as the minimum, which the Dart SDK constraint already implied. There are no breaking changes in the Dart API; the move of the Android native code to a new namespace only affects code that names the plugin class directly (see Changed).

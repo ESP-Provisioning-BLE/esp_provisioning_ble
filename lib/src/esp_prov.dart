@@ -487,9 +487,9 @@ class EspProv {
   /// Sends [data] to the `custom-data` endpoint and returns what the device
   /// answers.
   ///
-  /// [data] is split into chunks of at most [packageSize] bytes, which must
-  /// be greater than zero. Each chunk is encrypted with [security] (with
-  /// [Security0] it travels in the clear) and sent as a separate request;
+  /// [data] is split into chunks of at most [packageSize] bytes. Each chunk
+  /// is encrypted with [security] (with [Security0] it travels in the clear)
+  /// and sent as a separate request;
   /// the non-empty responses are decrypted and concatenated in order. An
   /// empty [data] sends nothing and returns an empty [Uint8List].
   ///
@@ -499,8 +499,15 @@ class EspProv {
   /// for it. Send custom data after [establishSession] and before the Wi-Fi
   /// configuration completes, because the manager removes all endpoints once
   /// provisioning ends.
+  ///
+  /// Throws an [ArgumentError], before anything is sent, if [packageSize] is
+  /// not greater than zero.
   Future<Uint8List> sendReceiveCustomData(Uint8List data,
       {int packageSize = 256}) async {
+    if (packageSize <= 0) {
+      throw ArgumentError.value(
+          packageSize, 'packageSize', 'Must be greater than zero');
+    }
     var remainingData = data.length;
     var offset = 0;
     List<int> ret = [];
