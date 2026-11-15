@@ -6,11 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-15
+
+This release makes the plugin build again on Android with current Flutter releases, adds `Security0` for devices provisioned without security, reports WPA3 networks correctly in scan results, and throws a typed exception when a scan response has an unexpected message type. It also declares Flutter 3.13.0 as the minimum, which the Dart SDK constraint already implied. There are no breaking changes in the Dart API; the move of the Android native code to a new namespace only affects code that names the plugin class directly (see Changed).
+
 ### Added
 
 - `UnexpectedMessageTypeException`: a typed exception thrown by `startScanResponse`, `scanStatusResponse` and `scanResultResponse` (and so by `scan`/`startScanWiFi`) when the device answers with a message type other than the one expected. It exposes `expectedType`, `expectedValue`, `actualType`, `actualValue` and `payload` using only core Dart types. It implements `Exception` and its `toString()` is identical to the plain `Exception('Invalid expected message type ...')` thrown before, so existing `on Exception`, `catch (e)` and string-comparing code keeps working unchanged.
-- The `WPA3_PSK` (6) and `WPA2_WPA3_PSK` (7) auth modes in the `WifiAuthMode` protobuf enum, matching `wifi_constants.proto` in ESP-IDF v5.4, so scan results from WPA3 networks decode to a known mode (#19). Thanks to @xiayesuifeng for the contribution.
-- `Security0`: the no-encryption (`SecScheme0`) provisioning handshake, for ESP32 firmware configured with `WIFI_PROV_SECURITY_0`, and the `Security0State` enum that tracks it (`step0Request`, `step0Response`, `finish`). Pass it to `EspProv` like `Security1`; `encrypt` and `decrypt` return the data unchanged, and a response without a Security0 session payload is rejected. No existing signature changes, so classes that implement `ProvSecurity` keep compiling. Thanks to @milan-trkulja-metaswiss for the original contribution (#18).
+- The `WPA3_PSK` (6) and `WPA2_WPA3_PSK` (7) auth modes in the `WifiAuthMode` protobuf enum, matching `wifi_constants.proto` in ESP-IDF v5.4, so scan results from WPA3 networks decode to a known mode ([#19](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/pull/19)). Thanks to @xiayesuifeng for the contribution.
+- `Security0`: the no-encryption (`SecScheme0`) provisioning handshake, for ESP32 firmware configured with `WIFI_PROV_SECURITY_0`, and the `Security0State` enum that tracks it (`step0Request`, `step0Response`, `finish`). Pass it to `EspProv` like `Security1`; `encrypt` and `decrypt` return the data unchanged, and a response without a Security0 session payload is rejected. No existing signature changes, so classes that implement `ProvSecurity` keep compiling. Thanks to @milan-trkulja-metaswiss for the original contribution ([#18](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/pull/18)).
 - Example app: a Security 0 / Security 1 selector on the connect screen, with the proof-of-possession field shown only for Security 1.
 
 ### Changed
