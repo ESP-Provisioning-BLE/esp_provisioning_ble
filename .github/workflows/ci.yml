@@ -10,24 +10,43 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Lowest Flutter release the package supports, built by the "minimum" entry
+  # of the matrices below. This is the only place in CI to change it; keep it
+  # equal to the flutter constraint in the environment of pubspec.yaml.
+  FLUTTER_MIN_VERSION: "3.13.0"
+
 jobs:
   package:
-    name: package
+    # "package" and "example" are required status checks on main, so the
+    # stable entries keep exactly those names. The other entries get a suffix.
+    name: ${{ matrix.flutter == 'stable' && 'package' || format('package ({0})', matrix.flutter) }}
     runs-on: ubuntu-latest
+    # The beta entry is an early warning and must not block merges.
+    continue-on-error: ${{ matrix.flutter == 'beta' }}
     permissions:
       contents: read
       pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        flutter: [minimum, stable, beta]
     steps:
       - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          channel: stable
+          channel: ${{ matrix.flutter == 'beta' && 'beta' || 'stable' }}
+          flutter-version: ${{ matrix.flutter == 'minimum' && env.FLUTTER_MIN_VERSION || '' }}
 
+      # example/ requires a newer Dart than the minimum supported one, so the
+      # minimum entry resolves the package alone.
       - name: Install dependencies
-        run: flutter pub get
+        run: flutter pub get ${{ matrix.flutter == 'minimum' && '--no-example' || '' }}
 
+      # The formatter output depends on the Dart version: check it on stable only.
       - name: Verify formatting
+        if: matrix.flutter == 'stable'
         run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Analyze
@@ -37,11 +56,13 @@ jobs:
         run: flutter test --coverage
 
       - name: Install lcov and drop generated files from coverage
+        if: matrix.flutter == 'stable'
         run: |
           sudo apt-get update && sudo apt-get install -y lcov
           lcov --remove coverage/lcov.info '*/generated/*' -o coverage/lcov.info --ignore-errors unused
 
       - name: Report coverage and enforce threshold (>= 60%)
+        if: matrix.flutter == 'stable'
         uses: zgosalvez/github-actions-report-lcov@0e97540271bfaece1ddff20e7fa8d9a6ab1abf67 # v7.1.0
         with:
           coverage-files: coverage/lcov.info
@@ -54,11 +75,33 @@ jobs:
           update-comment: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
 
       - name: Validate publishability
+        if: matrix.flutter == 'stable'
         run: dart pub publish --dry-run
 
+      # On the minimum Flutter, also check the lower bounds of the dependency
+      # constraints.
+      - name: Downgrade dependencies to their lowest allowed versions
+        if: matrix.flutter == 'minimum'
+        run: flutter pub downgrade --no-example
+
+      - name: Analyze with downgraded dependencies
+        if: matrix.flutter == 'minimum'
+        run: flutter analyze
+
+      - name: Run tests with downgraded dependencies
+        if: matrix.flutter == 'minimum'
+        run: flutter test
+
   example:
-    name: example
+    # Required status check on main: the stable entry keeps the plain name.
+    # The example requires Dart ^3.10.1, so there is no minimum entry.
+    name: ${{ matrix.flutter == 'stable' && 'example' || format('example ({0})', matrix.flutter) }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.flutter == 'beta' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        flutter: [stable, beta]
     defaults:
       run:
         working-directory: example
@@ -67,12 +110,13 @@ jobs:
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          channel: stable
+          channel: ${{ matrix.flutter }}
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Verify formatting
+        if: matrix.flutter == 'stable'
         run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Analyze
