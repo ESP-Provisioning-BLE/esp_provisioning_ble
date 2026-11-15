@@ -375,10 +375,16 @@ class EspProv {
   /// Tells the device, through the `prov-config` endpoint, to connect to the
   /// network sent with [sendWifiConfig].
   ///
-  /// Returns `false` if the device answers with an error status, for example
-  /// when no credentials were sent first, and `true` otherwise. `true` only
-  /// means that the device started connecting: use [getStatus] to follow
-  /// the result.
+  /// Returns `false` if the device answers with an error status, and `true`
+  /// otherwise. `true` only means that the device started connecting: use
+  /// [getStatus] to follow the result.
+  ///
+  /// ESP-IDF's provisioning manager answers with an error when no
+  /// credentials were sent first, and also once the device has received
+  /// credentials, until the firmware resets the provisioning state after a
+  /// failure (with `wifi_prov_mgr_reset_sm_state_on_failure()`). So after a
+  /// failed connection, new credentials are only applied if the firmware
+  /// does that reset; reconnecting over BLE does not.
   Future<bool> applyWifiConfig() async {
     var payload = WiFiConfigPayload();
     payload.msg = WiFiConfigMsgType.TypeCmdApplyConfig;
@@ -407,6 +413,14 @@ class EspProv {
   /// [WifiConnectionState.Connecting]. ESP-IDF's provisioning manager stops
   /// the provisioning service once it has reported
   /// [WifiConnectionState.Connected], so later requests may fail.
+  ///
+  /// This package does not retry a failed connection and does not follow
+  /// the device's retries: each call returns what the device reports at that
+  /// moment. The firmware decides whether the device retries. While it does,
+  /// ESP-IDF's provisioning manager reports [WifiConnectionState.Connecting]
+  /// (the number of remaining attempts is not exposed), and a firmware that
+  /// keeps retrying after reporting [WifiConnectionState.ConnectionFailed]
+  /// can still connect later. See "Wi-Fi connection retries" in the README.
   Future<ConnectionStatus> getStatus() async {
     var payload = WiFiConfigPayload();
     payload.msg = WiFiConfigMsgType.TypeCmdGetStatus;

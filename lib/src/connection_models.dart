@@ -16,6 +16,9 @@ enum WifiConnectionState {
   Disconnected,
 
   /// The device could not connect; see [ConnectionStatus.failedReason].
+  ///
+  /// It is not necessarily final: a firmware that keeps retrying can still
+  /// connect later. This package does not retry by itself.
   ConnectionFailed,
 }
 

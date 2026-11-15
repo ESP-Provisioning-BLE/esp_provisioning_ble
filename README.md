@@ -41,6 +41,7 @@ The plugin logic is pure Dart on top of your `ProvTransport`, so the platform re
   - [Scan for Wi-Fi networks](#scan-for-wi-fi-networks)
   - [Send and apply the Wi-Fi config](#send-and-apply-the-wi-fi-config)
   - [Check the provisioning status](#check-the-provisioning-status)
+  - [Wi-Fi connection retries](#wi-fi-connection-retries)
   - [Send and receive custom data](#send-and-receive-custom-data)
 - [Security](#security)
 - [Protocol communication overview](#protocol-communication-overview)
@@ -172,6 +173,22 @@ switch (status.state) {
     break;
 }
 ```
+
+### Wi-Fi connection retries
+
+The plugin does not retry a failed Wi-Fi connection and does not follow the retries of the ESP32: `getStatus` returns what the device reports at the moment it is called. Whether and how the device retries is decided by its firmware. With ESP-IDF's provisioning manager (checked on v5.4 and v5.5):
+
+- `wifi_prov_conn_cfg.wifi_conn_attempts` in the manager configuration sets how many connection attempts the device makes. While attempts remain, `getStatus` reports `Connecting`; the number of remaining attempts is not exposed by this plugin. When they run out, it reports `ConnectionFailed`.
+- With the default, `0`, an authentication error or a network that is not found is reported as `ConnectionFailed` right away, and other disconnections are retried while `getStatus` reports `Connecting`.
+- The application code of the firmware can retry as well. ESP-IDF's `wifi_prov_mgr` example calls `esp_wifi_connect()` again on every disconnection, so a device that reported `ConnectionFailed` can still connect later and report `Connected`, unless the firmware resets the provisioning state first.
+- Once the device has received credentials, it rejects new ones until the firmware resets the provisioning state with `wifi_prov_mgr_reset_sm_state_on_failure()` after a failure. Until then `sendWifiConfig` still returns `true`, but `applyWifiConfig` returns `false`. Reconnecting over BLE does not reset that state. The ESP-IDF example resets it on failure when `CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE` is enabled, which is its default.
+
+What this means for your app:
+
+- Keep polling `getStatus` while it reports `Connecting`, with a timeout of your own.
+- Treat `ConnectionFailed` as final only if you know that the firmware stops retrying. Otherwise keep polling for a while, or tell the user that the device may still be trying.
+- Before letting the user try other credentials after a failure, check the result of `applyWifiConfig`: `false` means that the device does not accept them yet, and the firmware has to reset its provisioning state first.
+- If you control the firmware, a limited number of attempts plus a reset of the provisioning state on failure gives the app a clear `ConnectionFailed` and lets it send new credentials in the same session.
 
 ### Send and receive custom data
 
