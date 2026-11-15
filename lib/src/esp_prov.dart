@@ -133,7 +133,7 @@ class EspProv {
           // break the whole scan.
           bssid: entry.bssid.length == 6 ? _decodeBssid(entry.bssid) : null,
           rssi: entry.rssi,
-          private: entry.auth.toString() != 'Open'));
+          private: _isPrivateAuthMode(_rawAuthMode(entry))));
     }
     return ret;
   }
@@ -299,4 +299,57 @@ class EspProv {
     }
     return hexBssid.split(':').map((e) => int.parse(e, radix: 16)).toList();
   }
+
+  /// Field number of `auth` in `WiFiScanResult` (`wifi_scan.proto`).
+  ///
+  /// Written out instead of looked up by name, because field names are empty
+  /// when an app is built with `protobuf.omit_field_names`.
+  static const int _scanResultAuthField = 5;
+
+  // Values of ESP-IDF's `wifi_auth_mode_t`, which the firmware reports as is:
+  // https://github.com/espressif/esp-idf/blob/v5.4/components/esp_wifi/include/esp_wifi_types_generic.h#L81-L100
+  // The numbering is stable: OWE is still 9 on master, where retired modes
+  // keep their slot as placeholders and new ones are appended.
+
+  /// `WIFI_AUTH_OPEN`: no encryption and no password.
+  static const int _wifiAuthOpen = 0;
+
+  /// `WIFI_AUTH_OWE`: Opportunistic Wireless Encryption, known as Wi-Fi
+  /// Enhanced Open. The traffic is encrypted, but anyone can join without a
+  /// password, so for [WifiAP.private] it is as open as `WIFI_AUTH_OPEN`.
+  static const int _wifiAuthOwe = 9;
+
+  /// The raw `wifi_auth_mode_t` value that the device reported for [entry].
+  ///
+  /// The firmware copies the Wi-Fi driver's auth mode into `auth` unchanged
+  /// (0 to 15 in ESP-IDF v5.4), but the `WifiAuthMode` enum in
+  /// `wifi_constants.proto` only names some of those values. protobuf does not
+  /// set an enum field to a value it does not know: it keeps the varint in
+  /// `unknownFields`, and `entry.auth` then reads as the default, `Open`. So
+  /// the value is taken from `auth` when it is set, or else from the unknown
+  /// fields. With neither, the device sent nothing, which in proto3 means 0.
+  ///
+  /// Comparing numbers instead of names also keeps this working when an app
+  /// is built with `protobuf.omit_enum_names`, where every enum name is empty.
+  static int _rawAuthMode(WiFiScanResult entry) {
+    if (entry.hasAuth()) {
+      return entry.auth.value;
+    }
+    final unknown = entry.unknownFields.getField(_scanResultAuthField);
+    if (unknown == null || unknown.varints.isEmpty) {
+      return _wifiAuthOpen;
+    }
+    // Like any singular field, the last occurrence on the wire wins.
+    return unknown.varints.last.toInt();
+  }
+
+  /// Whether joining a network with the raw `wifi_auth_mode_t` [authMode]
+  /// needs credentials, as reported in [WifiAP.private].
+  ///
+  /// Only Open and OWE do not. Every other mode is private, including values
+  /// this package does not know yet: a lock shown on an open network costs
+  /// little, while an app may skip the password prompt for a secured network
+  /// reported as open.
+  static bool _isPrivateAuthMode(int authMode) =>
+      authMode != _wifiAuthOpen && authMode != _wifiAuthOwe;
 }

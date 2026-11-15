@@ -40,6 +40,47 @@ Uint8List _scanResultResp(List<WiFiScanResult> entries) {
   return Uint8List.fromList(payload.writeToBuffer());
 }
 
+/// A scan entry whose `auth` is the raw `wifi_auth_mode_t` value [auth], built
+/// from wire bytes the way a device sends it. Values the generated
+/// [proto.WifiAuthMode] enum does not know then land in `unknownFields`
+/// instead of `auth`, exactly as they do when decoding a real scan result.
+///
+/// `auth` is field 5, a varint, so its key byte is `(5 << 3) | 0 = 0x28`, and
+/// [auth] values below 0x80 fit in a single byte.
+WiFiScanResult _entryWithRawAuth(String ssid, List<int> auth) {
+  assert(auth.every((value) => value >= 0 && value < 0x80));
+  return WiFiScanResult.fromBuffer([
+    ...(WiFiScanResult()..ssid = utf8.encode(ssid)).writeToBuffer(),
+    for (final value in auth) ...[0x28, value],
+  ]);
+}
+
+/// ESP-IDF's `wifi_auth_mode_t`, which the firmware copies into the scan
+/// result unchanged: 0 to 15 in v5.4, plus 16 and 17 added on master.
+const _idfAuthModes = {
+  0: 'OPEN',
+  1: 'WEP',
+  2: 'WPA_PSK',
+  3: 'WPA2_PSK',
+  4: 'WPA_WPA2_PSK',
+  5: 'ENTERPRISE',
+  6: 'WPA3_PSK',
+  7: 'WPA2_WPA3_PSK',
+  8: 'WAPI_PSK',
+  9: 'OWE',
+  10: 'WPA3_ENT_192',
+  11: 'WPA3_EXT_PSK',
+  12: 'WPA3_EXT_PSK_MIXED_MODE',
+  13: 'DPP',
+  14: 'WPA3_ENTERPRISE',
+  15: 'WPA2_WPA3_ENTERPRISE',
+  16: 'WPA_ENTERPRISE',
+  17: 'UNKNOWN',
+};
+
+/// The only modes that need no password: OPEN and OWE (Enhanced Open).
+const _idfOpenAuthModes = {0, 9};
+
 Uint8List _wifiConfigResp(Status status) => Uint8List.fromList(
       (WiFiConfigPayload()
             ..msg = WiFiConfigMsgType.TypeRespSetConfig
@@ -238,6 +279,51 @@ void main() {
       await espProv.startScanWiFi();
 
       verify(() => transport.sendReceive('prov-scan', any())).called(2);
+    });
+  });
+
+  group('WifiAP.private', () {
+    Future<WifiAP> parseEntry(WiFiScanResult entry) async {
+      when(() => security.decrypt(any()))
+          .thenAnswer((_) async => _scanResultResp([entry]));
+      final result = await espProv.scanResultResponse(Uint8List(0));
+      return result.single;
+    }
+
+    for (final MapEntry(key: auth, value: name) in _idfAuthModes.entries) {
+      final isPrivate = !_idfOpenAuthModes.contains(auth);
+      test('is $isPrivate for WIFI_AUTH_$name ($auth)', () async {
+        final ap = await parseEntry(_entryWithRawAuth('Net$auth', [auth]));
+        expect(ap.private, isPrivate);
+      });
+    }
+
+    test('is false when the device omits auth (proto3 sends no 0)', () async {
+      final ap = await parseEntry(WiFiScanResult()..ssid = utf8.encode('Net'));
+      expect(ap.private, isFalse);
+    });
+
+    test('takes the last value when auth appears more than once', () async {
+      // Singular protobuf fields keep their last occurrence on the wire.
+      final owe = await parseEntry(_entryWithRawAuth('Net', [12, 9]));
+      expect(owe.private, isFalse);
+
+      final wpa3ExtPsk = await parseEntry(_entryWithRawAuth('Net', [9, 12]));
+      expect(wpa3ExtPsk.private, isTrue);
+    });
+
+    test('keeps modes the enum does not know out of auth', () {
+      // The decoder keeps an unknown enum value out of `auth`, which then
+      // reads as Open: that is why WPA3 networks used to come out as open.
+      // This also checks that the table above really covers that path.
+      final wpa2Wpa3Enterprise = _entryWithRawAuth('Net', [15]);
+      final bytes = _scanResultResp([wpa2Wpa3Enterprise]);
+      final entry =
+          WiFiScanPayload.fromBuffer(bytes).respScanResult.entries.single;
+
+      expect(entry.hasAuth(), isFalse);
+      expect(entry.auth, proto.WifiAuthMode.Open);
+      expect(entry.unknownFields.getField(5)?.varints.single.toInt(), 15);
     });
   });
 

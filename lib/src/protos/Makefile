@@ -7,4 +7,6 @@ python_proto: *.proto
 	@protoc --python_out=./python/ -I . *.proto
 
 dart_proto: *.proto
-	@protoc --dart_out=./dart/ -I . *.proto
+	@protoc --dart_out=./generated/ -I . *.proto
+	@rm -f ./generated/*.pbserver.dart
+	@dart format ./generated/

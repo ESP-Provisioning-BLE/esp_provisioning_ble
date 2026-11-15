@@ -54,13 +54,16 @@ const WifiAuthMode$json = {
     {'1': 'WPA2_PSK', '2': 3},
     {'1': 'WPA_WPA2_PSK', '2': 4},
     {'1': 'WPA2_ENTERPRISE', '2': 5},
+    {'1': 'WPA3_PSK', '2': 6},
+    {'1': 'WPA2_WPA3_PSK', '2': 7},
   ],
 };
 
 /// Descriptor for `WifiAuthMode`. Decode as a `google.protobuf.EnumDescriptorProto`.
 final $typed_data.Uint8List wifiAuthModeDescriptor = $convert.base64Decode(
     'CgxXaWZpQXV0aE1vZGUSCAoET3BlbhAAEgcKA1dFUBABEgsKB1dQQV9QU0sQAhIMCghXUEEyX1'
-    'BTSxADEhAKDFdQQV9XUEEyX1BTSxAEEhMKD1dQQTJfRU5URVJQUklTRRAF');
+    'BTSxADEhAKDFdQQV9XUEEyX1BTSxAEEhMKD1dQQTJfRU5URVJQUklTRRAFEgwKCFdQQTNfUFNL'
+    'EAYSEQoNV1BBMl9XUEEzX1BTSxAH');
 
 @$core.Deprecated('Use wifiConnectedStateDescriptor instead')
 const WifiConnectedState$json = {
