@@ -16,7 +16,7 @@ It is transport-agnostic: you implement a thin `ProvTransport` with the BLE pack
 - Secure session establishment with Security 1 (Curve25519 key exchange + AES-CTR) using a Proof-of-Possession (PoP).
 - Unencrypted sessions with Security 0, for devices provisioned without security.
 - Scan the Wi-Fi networks visible to the device, with SSID, RSSI, BSSID and whether the network needs credentials.
-- Send Wi-Fi credentials and apply them, optionally targeting a specific access point by BSSID.
+- Send Wi-Fi credentials and apply them, optionally with the BSSID of a specific access point (used only if the device firmware applies it).
 - Query the provisioning status, including the assigned device IP and the failure reason.
 - Exchange arbitrary custom data over the provisioning session.
 - Transport-agnostic: bring your own BLE stack by implementing `ProvTransport`.
@@ -41,6 +41,7 @@ The plugin logic is pure Dart on top of your `ProvTransport`, so the platform re
   - [Scan for Wi-Fi networks](#scan-for-wi-fi-networks)
   - [Send and apply the Wi-Fi config](#send-and-apply-the-wi-fi-config)
   - [Check the provisioning status](#check-the-provisioning-status)
+  - [Wi-Fi connection retries](#wi-fi-connection-retries)
   - [Send and receive custom data](#send-and-receive-custom-data)
 - [Security](#security)
 - [Protocol communication overview](#protocol-communication-overview)
@@ -95,8 +96,10 @@ final openProv = EspProv(
 Call `establishSession` to run the session handshake. It returns an `EstablishSessionStatus`:
 
 - `connected`: the session was established successfully.
-- `disconnected`: the connection to the device dropped.
-- `keymismatch`: the handshake failed while the device was still connected. With `Security1` this usually means the Proof-of-Possession (PoP) is incorrect; with `Security0`, that the device's answer was not a valid Security 0 response.
+- `disconnected`: the device is not connected, or the handshake failed and the connection was already closed.
+- `keymismatch`: the handshake failed while the device was still connected, whatever the cause. With `Security1` a common cause is a wrong Proof-of-Possession (PoP); with `Security0`, that the device's answer was not a valid Security 0 response; an empty or undecodable response, or a transport error, gives it too.
+
+After a failed handshake the status only reflects whether the device was still connected, not the cause of the failure. A wrong PoP comes back as `keymismatch` if the device is still connected when the plugin checks, and as `disconnected` if the device has already closed the connection. Telling the causes apart is planned in [#37](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/37).
 
 ```dart
 final status = await prov.establishSession();
@@ -108,7 +111,7 @@ switch (status) {
     // Handle the dropped connection.
     break;
   case EstablishSessionStatus.keymismatch:
-    // Wrong Proof-of-Possession.
+    // Handshake failed, for example because of a wrong Proof-of-Possession.
     break;
 }
 ```
@@ -136,11 +139,13 @@ If the device answers a scan request with a message of an unexpected type (for e
 
 ### Send and apply the Wi-Fi config
 
-`sendWifiConfig` delivers the credentials and returns whether the device accepted them; `applyWifiConfig` then tells the device to connect. Pass an optional `bssid` to target a specific access point.
+`sendWifiConfig` delivers the credentials and returns whether the device accepted them; `applyWifiConfig` then tells the device to connect. Pass an optional `bssid` to ask for a specific access point.
+
+The `bssid` is always sent, but whether the device uses it depends on its firmware. ESP-IDF's stock provisioning manager (checked on v5.4 and v5.5) validates its length and then drops it, so the device joins the network by SSID and the Wi-Fi driver picks the access point. To join a specific access point, the firmware has to apply the BSSID itself, as the [test firmware](https://github.com/ESP-Provisioning-BLE/esp_provisioning_test_firmware) does with `CONFIG_TESTFW_APPLY_BSSID`.
 
 ```dart
 await prov.sendWifiConfig(ssid: ssid, password: password);
-// Or target a specific access point:
+// Or ask for a specific access point (only firmware that applies the BSSID uses it):
 // await prov.sendWifiConfig(ssid: ssid, password: password, bssid: 'aa:bb:cc:dd:ee:ff');
 await prov.applyWifiConfig();
 ```
@@ -170,6 +175,22 @@ switch (status.state) {
     break;
 }
 ```
+
+### Wi-Fi connection retries
+
+The plugin does not retry a failed Wi-Fi connection and does not follow the retries of the ESP32: `getStatus` returns what the device reports at the moment it is called. Whether and how the device retries is decided by its firmware. With ESP-IDF's provisioning manager (checked on v5.4 and v5.5):
+
+- `wifi_prov_conn_cfg.wifi_conn_attempts` in the manager configuration sets how many connection attempts the device makes. While attempts remain, `getStatus` reports `Connecting`; the number of remaining attempts is not exposed by this plugin. When they run out, it reports `ConnectionFailed`.
+- With the default, `0`, an authentication error or a network that is not found is reported as `ConnectionFailed` right away, and other disconnections are retried while `getStatus` reports `Connecting`.
+- The application code of the firmware can retry as well. ESP-IDF's `wifi_prov_mgr` example calls `esp_wifi_connect()` again on every disconnection, so a device that reported `ConnectionFailed` can still connect later and report `Connected`, unless the firmware resets the provisioning state first.
+- Once the device has received credentials, it rejects new ones until the firmware resets the provisioning state with `wifi_prov_mgr_reset_sm_state_on_failure()` after a failure. Until then `sendWifiConfig` still returns `true`, but `applyWifiConfig` returns `false`. Reconnecting over BLE does not reset that state. The ESP-IDF example resets it on failure when `CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE` is enabled, which is its default.
+
+What this means for your app:
+
+- Keep polling `getStatus` while it reports `Connecting`, with a timeout of your own.
+- Treat `ConnectionFailed` as final only if you know that the firmware stops retrying. Otherwise keep polling for a while, or tell the user that the device may still be trying.
+- Before letting the user try other credentials after a failure, check the result of `applyWifiConfig`: `false` means that the device does not accept them yet, and the firmware has to reset its provisioning state first.
+- If you control the firmware, a limited number of attempts plus a reset of the provisioning state on failure gives the app a clear `ConnectionFailed` and lets it send new credentials in the same session.
 
 ### Send and receive custom data
 
