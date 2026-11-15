@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Declared Flutter 3.13.0 as the minimum (`flutter: ">=3.13.0"`, previously `>=1.17.0`). The Dart SDK constraint (`>=3.1.0`) already required it, so nobody who could install the package before is excluded.
+
+### Fixed
+
+- Android builds with current Flutter releases ([#54](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/54)). The plugin compiled against API 33, which apps on AGP 8.13 or later (required since Flutter 3.50) reject, and new apps failed to build from Flutter 3.44. It now compiles against API 34, targets Java 11, and applies the Kotlin Gradle Plugin only when Flutter or AGP has not already done so, which also removes Flutter's Kotlin Gradle Plugin warning. `minSdk` stays at 19.
+
 ## [1.1.0] - 2026-07-19
 
 This is the first release published under the ESP-Provisioning-BLE organization. It focuses on unblocking installation on a stable Dart SDK, adding BSSID support, and fixing genuine issues carried over from 1.0.0. These changes should not affect existing users negatively; if anything does, please open an issue, they are very welcome.

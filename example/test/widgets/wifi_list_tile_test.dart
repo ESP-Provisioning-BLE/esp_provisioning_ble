@@ -1,5 +1,6 @@
 import 'package:esp_provisioning_ble/esp_provisioning_ble.dart';
 import 'package:example/src/widgets/wifi_list_tile.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
