@@ -56,15 +56,17 @@ The plugin logic is pure Dart on top of your `ProvTransport`, so the platform re
 Add the package with:
 
 ```sh
-flutter pub add esp_provisioning_ble
+flutter pub add "esp_provisioning_ble:^2.0.0-dev.1"
 ```
 
 Or add it to your `pubspec.yaml` manually and run `flutter pub get`:
 
 ```yaml
 dependencies:
-  esp_provisioning_ble: ^1.2.0
+  esp_provisioning_ble: ^2.0.0-dev.1
 ```
+
+For the stable 1.x line (protobuf 3, Flutter 3.13 or later), use `^1.2.1`. To move from 1.x, see [Migrating from 1.x](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/blob/v2.0.0-dev.1/CHANGELOG.md#migrating-from-1x) in the changelog.
 
 It requires Flutter 3.29 or later (Dart 3.7 or later). On Android the plugin's `minSdk` is 19; your app's own `minSdk` may be higher.
 
