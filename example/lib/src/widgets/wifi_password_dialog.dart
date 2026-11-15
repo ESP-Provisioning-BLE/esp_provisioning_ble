@@ -1,3 +1,4 @@
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 /// Dialog that prompts the user for a WiFi password before provisioning.

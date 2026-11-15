@@ -1,16 +1,16 @@
-group 'com.ogabrielinacio.esp_provisioning_ble'
-version '1.0-SNAPSHOT'
+group = "com.ogabrielinacio.esp_provisioning_ble"
+version = "1.0-SNAPSHOT"
 
 buildscript {
-    ext.kotlin_version = '1.7.10'
+    ext.kotlin_version = "2.2.20"
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.0'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath("com.android.tools.build:gradle:8.11.1")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
     }
 }
 
@@ -21,37 +21,35 @@ allprojects {
     }
 }
 
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
+apply plugin: "com.android.library"
+
+// Kotlin support comes from one of three places:
+// - AGP 9 or later with built-in Kotlin: AGP compiles Kotlin itself.
+// - Flutter 3.44 or later without built-in Kotlin: the Flutter Gradle Plugin
+//   applies the Kotlin Gradle Plugin (KGP) to plugins that do not declare it.
+// - Flutter 3.41 and earlier: nobody does it for us, so apply KGP here.
+// The first two register the "kotlin" extension before this point, so its
+// absence identifies the third case.
+if (extensions.findByName("kotlin") == null) {
+    pluginManager.apply("org.jetbrains.kotlin.android")
+}
 
 android {
-    if (project.android.hasProperty("namespace")) {
-        namespace 'com.ogabrielinacio.esp_provisioning_ble'
-    }
+    namespace = "com.ogabrielinacio.esp_provisioning_ble"
 
-    compileSdkVersion 33
+    // 34 is the lowest API level accepted by the androidx libraries that
+    // Flutter 3.24 and later bring in, and the highest that AGP releases
+    // before 8.1 (still accepted by Flutter 3.32 and earlier) can process in
+    // release builds.
+    compileSdk = 34
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
-
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-        test.java.srcDirs += 'src/test/kotlin'
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     defaultConfig {
-        minSdkVersion 19
-    }
-
-    dependencies {
-        testImplementation 'org.jetbrains.kotlin:kotlin-test'
-        testImplementation 'org.mockito:mockito-core:5.0.0'
+        minSdk = 19
     }
 
     testOptions {
@@ -65,4 +63,22 @@ android {
             }
         }
     }
+}
+
+// Set on the compile tasks because the project-level
+// kotlin { compilerOptions { } } block needs Kotlin 2.0, and apps on
+// older Flutter releases may still use Kotlin 1.x.
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach { task ->
+    if (task.hasProperty("compilerOptions")) {
+        task.compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+    } else {
+        // Kotlin 1.7 and earlier, such as the 1.7.10 of the Flutter 3.13 app
+        // template, have no compilerOptions on the tasks.
+        task.kotlinOptions.jvmTarget = "11"
+    }
+}
+
+dependencies {
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testImplementation("org.mockito:mockito-core:5.0.0")
 }

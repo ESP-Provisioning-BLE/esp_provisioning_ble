@@ -1,4 +1,5 @@
 import 'package:esp_provisioning_ble/esp_provisioning_ble.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 /// List tile displaying a WiFi network with its SSID, signal strength, and
