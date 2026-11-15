@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-15
+
+This patch release documents the whole public API and fixes two calls that could hang instead of failing. There are no changes to the Dart API; the only behavior changes are the two fixes below, which turn a hang into an error.
+
 ### Added
 
 - Dartdoc comments for the whole public API, covering what each method sends, returns and throws, plus documentation in the README and the API docs that the device firmware decides whether a `bssid` passed to `sendWifiConfig` is used (ESP-IDF's stock provisioning manager drops it and connects by SSID), that the plugin does not handle the ESP32's Wi-Fi connection retries and what that means for an app ([#13](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/13)), and when `establishSession` returns each `EstablishSessionStatus` ([#11](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/11)).
