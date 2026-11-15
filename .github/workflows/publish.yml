@@ -7,6 +7,11 @@ name: Publish to pub.dev
 # by a tag ruleset, and the environment requires manual approval, so a release
 # needs both a tag from an admin and an explicit approval before it publishes.
 #
+# Stable versions (vX.Y.Z) are published from main and pre-releases
+# (vX.Y.Z-dev.N, vX.Y.Z-rc.N) from a release/** branch. The branch-check job
+# enforces that before the deployment asks for approval. GitHub runs this file
+# as it is in the tagged commit, so a release branch carries its own copy.
+#
 # The GitHub OIDC -> pub.dev credential exchange is performed by the
 # dart-lang/setup-dart step; flutter-action alone does not do it. flutter-action
 # is still needed so `flutter pub get` can resolve the `sdk: flutter` deps.
@@ -15,9 +20,46 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
 
 jobs:
+  branch-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Full history and every branch, to know which branches contain the
+      # tagged commit. The default shallow checkout only has the tag.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check that the tag is on the right branch
+        env:
+          TAG: ${{ github.ref_name }}
+          # Branches (as remote-tracking refs) a tag of each kind may be on.
+          STABLE_BRANCHES: origin/main
+          PRERELEASE_BRANCHES: origin/release/*
+        run: |
+          commit="$(git rev-parse "refs/tags/$TAG^{commit}")"
+          case "$TAG" in
+            *-*) kind=pre-release; allowed="$PRERELEASE_BRANCHES" ;;
+            *) kind=stable; allowed="$STABLE_BRANCHES" ;;
+          esac
+          # The patterns are split on spaces and matched by git, not by the
+          # shell: disable pathname expansion so the checkout cannot alter them.
+          set -f
+          # shellcheck disable=SC2086
+          found="$(git branch --remotes --contains "$commit" --list $allowed --format='%(refname:short)')"
+          if [ -z "$found" ]; then
+            echo "::error::$TAG is a $kind tag, so its commit $commit must be on one of: $allowed. It is not, so nothing is published. Delete the tag and tag the right commit."
+            exit 1
+          fi
+          echo "$TAG ($kind) points to $commit, which is on:"
+          echo "$found"
+
   publish:
+    needs: branch-check
     runs-on: ubuntu-latest
     environment: pub.dev
     permissions:
