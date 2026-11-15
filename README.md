@@ -96,8 +96,10 @@ final openProv = EspProv(
 Call `establishSession` to run the session handshake. It returns an `EstablishSessionStatus`:
 
 - `connected`: the session was established successfully.
-- `disconnected`: the connection to the device dropped.
-- `keymismatch`: the handshake failed while the device was still connected. With `Security1` this usually means the Proof-of-Possession (PoP) is incorrect; with `Security0`, that the device's answer was not a valid Security 0 response.
+- `disconnected`: the device is not connected, or the handshake failed and the connection was already closed.
+- `keymismatch`: the handshake failed while the device was still connected, whatever the cause. With `Security1` a common cause is a wrong Proof-of-Possession (PoP); with `Security0`, that the device's answer was not a valid Security 0 response; an empty or undecodable response, or a transport error, gives it too.
+
+After a failed handshake the status only reflects whether the device was still connected, not the cause of the failure. A wrong PoP comes back as `keymismatch` if the device is still connected when the plugin checks, and as `disconnected` if the device has already closed the connection. Telling the causes apart is planned in [#37](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/37).
 
 ```dart
 final status = await prov.establishSession();
@@ -109,7 +111,7 @@ switch (status) {
     // Handle the dropped connection.
     break;
   case EstablishSessionStatus.keymismatch:
-    // Wrong Proof-of-Possession.
+    // Handshake failed, for example because of a wrong Proof-of-Possession.
     break;
 }
 ```

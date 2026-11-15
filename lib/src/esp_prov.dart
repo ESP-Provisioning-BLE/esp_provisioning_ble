@@ -13,22 +13,38 @@ import 'transport.dart';
 import 'unexpected_message_type_exception.dart';
 
 /// Result of [EspProv.establishSession].
+///
+/// When the handshake fails, the status does not say why it failed: it only
+/// says whether the transport was still connected right after the failure
+/// (see [keymismatch] and [disconnected]). Telling the causes apart, such as
+/// a wrong proof of possession and other errors, is planned in
+/// https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/37,
+/// which will change when each value is returned.
 enum EstablishSessionStatus {
   /// The session handshake finished and the device accepted it, so the other
   /// [EspProv] requests can be sent.
   connected,
 
   /// The transport reported that the device is not connected, before or
-  /// during the handshake, or after the handshake failed.
+  /// during the handshake, or right after the handshake failed.
+  ///
+  /// A failed handshake is reported as [disconnected], whatever the cause,
+  /// if the connection is already closed when [EspProv.establishSession]
+  /// checks it. That includes a wrong proof of possession when the device
+  /// closes the connection before that check.
   disconnected,
 
-  /// The handshake failed while the device was still connected.
+  /// The handshake failed while the device was still connected, whatever the
+  /// cause.
   ///
-  /// With [Security1] this usually means that the proof of possession does
-  /// not match the one of the device. With [Security0] it means that the
-  /// device did not answer with a valid Security 0 response. It is also
-  /// returned for any other error raised during the handshake while the
-  /// device stays connected, such as a response that cannot be decoded.
+  /// Despite its name, it does not mean that a key mismatch was detected.
+  /// [EspProv.establishSession] returns it for any error raised during the
+  /// handshake while [ProvTransport.checkConnect] still reports a
+  /// connection: a wrong proof of possession with [Security1], a response
+  /// that is not a valid Security 0 response with [Security0], an empty or
+  /// undecodable response, or an error thrown by the transport. A wrong
+  /// proof of possession can also come back as [disconnected] if the device
+  /// closes the connection first.
   keymismatch,
 }
 
@@ -87,7 +103,14 @@ class EspProv {
   /// - [EstablishSessionStatus.keymismatch] when an error happened while the
   ///   device is still connected, including an empty response.
   ///
-  /// It never throws: errors are turned into one of the statuses above.
+  /// It never throws: errors are turned into one of the statuses above. The
+  /// error itself is not inspected. After an error, the status depends only
+  /// on [ProvTransport.checkConnect], so the same cause can give either
+  /// status: a wrong proof of possession gives
+  /// [EstablishSessionStatus.keymismatch] if the device is still connected
+  /// at that moment, and [EstablishSessionStatus.disconnected] if it has
+  /// already closed the connection. This is planned to change in
+  /// https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/37.
   ///
   /// Once the session is established, calling it again returns
   /// [EstablishSessionStatus.connected] without repeating the handshake, as
