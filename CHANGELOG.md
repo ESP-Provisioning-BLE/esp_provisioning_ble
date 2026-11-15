@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - Declared Flutter 3.13.0 as the minimum (`flutter: ">=3.13.0"`, previously `>=1.17.0`). The Dart SDK constraint (`>=3.1.0`) already required it, so nobody who could install the package before is excluded.
+- Moved the Android native code from `com.ogabrielinacio.esp_provisioning_ble` to the organization's namespace, `dev.espprovble.esp_provisioning_ble` ([#36](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/36)). The Dart API and the method channel are unchanged, and Flutter regenerates the plugin registrant on the next build. Only code that names the plugin class directly, such as a manual registration on a custom `FlutterEngine`, has to switch to `dev.espprovble.esp_provisioning_ble.EspProvisioningBlePlugin`. A ProGuard or R8 rule that names the old class now matches nothing; the plugin does not need one.
 
 ### Fixed
 
