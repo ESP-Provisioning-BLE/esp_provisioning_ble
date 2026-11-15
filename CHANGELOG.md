@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** requires `protobuf` ^6.0.0 (was ^3.0.0), so the package can be installed alongside packages that need a recent protobuf, as long as their constraints allow protobuf 6 ([#53](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/53)). The bundled bindings are regenerated with `protoc_plugin` 25.0.0; the bytes exchanged with the device do not change, which the wire-format tests check. Thanks to @devYoungyang for reporting the conflict, and to @daveols for first proposing the protobuf upgrade ([#21](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/pull/21)).
+- **Breaking:** requires Dart 3.7 and Flutter 3.29 or later (was Dart 3.1 and Flutter 3.13), which protobuf 6 needs.
+- **Breaking:** the generated protobuf messages that the public API returns or takes now come from protobuf 6: `WiFiScanPayload` and its submessages, from the scan methods of `EspProv`, and `SessionData`, in `ProvSecurity.securitySession` and the `setup*` methods of `Security1`. On these objects `createRepeatedField`, `createMapField` and `eventPlugin` no longer exist, `info_` no longer has `toProto3Json` and `fromProto3Json`, and `RespScanResult.entries` is typed as `PbList`. Code that imports `package:esp_provisioning_ble/src/...` also loses the static `createRepeated()` of each message class. Some behavior changes as well (JSON with unknown fields, equality, `clear()` on oneofs); see the [protobuf changelog](https://pub.dev/packages/protobuf/changelog).
+
+### Migrating from 1.x
+
+- Code that only calls the plugin's own methods and reads `WifiAP`, `EstablishSessionStatus` and `WifiConnectionState` needs no changes: move to Dart 3.7 (Flutter 3.29) or later and update the constraint to `esp_provisioning_ble: ^2.0.0-dev.1`.
+- Your app must resolve `protobuf` 6.x, directly or through other packages. Drop any `dependency_overrides` for `protobuf` added to work around [#53](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/53).
+- If you used the members listed above on the returned messages, switch to their protobuf 6 equivalents, for example reading and modifying repeated fields through the generated getters instead of `createRepeatedField`.
+- Apps that cannot move to Dart 3.7 or protobuf 6 yet can stay on 1.x (`^1.2.0`), which keeps receiving fixes.
+
 ## [1.2.1] - 2026-11-15
 
 This patch release documents the whole public API and fixes two calls that could hang instead of failing. There are no changes to the Dart API; the only behavior changes are the two fixes below, which turn a hang into an error.

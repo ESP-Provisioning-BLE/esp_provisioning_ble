@@ -35,12 +35,12 @@ The sections above are copied from ESP-IDF. In this package, the Dart bindings u
 The generated code must match the `protobuf` constraint in `pubspec.yaml`, so use these pinned versions:
 
 * `protoc` 35.1 (any recent `protoc` gives the same output for these files)
-* `protoc_plugin` 21.0.2 (generates code for `protobuf` ^3.0.0; it reproduces the committed bindings byte for byte, while 21.1.x adds doc comments and named-argument constructors)
+* `protoc_plugin` 25.0.0 (generates code for `protobuf` ^6.0.0; 25.1.0 would require ^6.1.0)
 
 Install the plugin and make sure `protoc-gen-dart` is on the `PATH`:
 
 ```
-dart pub global activate protoc_plugin 21.0.2
+dart pub global activate protoc_plugin 25.0.0
 export PATH="$PATH:$HOME/.pub-cache/bin"
 ```
 
@@ -50,4 +50,4 @@ Then, after running `flutter pub get` in the package root (so that `dart format`
 make dart_proto
 ```
 
-This writes every `*.pb.dart`, `*.pbenum.dart` and `*.pbjson.dart` file into `generated/`, deletes the empty `*.pbserver.dart` files that this plugin version also emits (none of these `.proto` files defines a service), and runs `dart format` on them, which the CI format check requires. Review the result together with `test/src/protos_wire_format_test.dart`, which pins the bytes exchanged with the device.
+This writes every `*.pb.dart`, `*.pbenum.dart` and `*.pbjson.dart` file into `generated/` and runs `dart format` on them, which the CI format check requires. Review the result together with `test/src/protos_wire_format_test.dart`, which pins the bytes exchanged with the device.
