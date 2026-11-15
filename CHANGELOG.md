@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- The `WPA3_PSK` (6) and `WPA2_WPA3_PSK` (7) auth modes in the `WifiAuthMode` protobuf enum, matching `wifi_constants.proto` in ESP-IDF v5.4, so scan results from WPA3 networks decode to a known mode (#19). Thanks to @xiayesuifeng for the contribution.
+
 ### Changed
 
 - Declared Flutter 3.13.0 as the minimum (`flutter: ">=3.13.0"`, previously `>=1.17.0`). The Dart SDK constraint (`>=3.1.0`) already required it, so nobody who could install the package before is excluded.
