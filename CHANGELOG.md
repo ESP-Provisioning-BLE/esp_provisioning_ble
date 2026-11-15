@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - `sendReceiveCustomData` throws an `ArgumentError` naming `packageSize`, before sending anything, when `packageSize` is not greater than zero. With `0` and non-empty data it used to loop forever sending empty chunks to the device, and a negative value failed with a `RangeError` about an unrelated `end` argument ([#68](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/68)).
+- iOS: calling `Security1.encrypt` or `decrypt` before the session is set up, that is, before `establishSession` has finished, now fails with a `PlatformException` (code `error`), as on Android, instead of returning a `Future` that never completes ([#67](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/67)).
 
 ## [1.2.0] - 2026-11-15
 

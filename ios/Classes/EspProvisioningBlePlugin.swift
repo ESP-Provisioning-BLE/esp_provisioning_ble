@@ -23,6 +23,12 @@ public class SwiftEspProvisioningBlePlugin: NSObject, FlutterPlugin {
         let args = call.arguments as! NSDictionary
         let data = args["data"] as! FlutterStandardTypedData
         guard let cryptoAES = self.cryptoAES else {
+            // Same code as the error Android sends in this case, so Dart gets
+            // a PlatformException on both platforms instead of a Future that
+            // never completes.
+            result(FlutterError(code: "error",
+                                message: "crypt called before init: the session cipher has not been initialized",
+                                details: nil))
             return
         }
         let ret = cryptoAES.encrypt(data: data.data)
