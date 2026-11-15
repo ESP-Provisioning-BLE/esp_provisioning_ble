@@ -124,3 +124,55 @@ jobs:
 
       - name: Run tests
         run: flutter test
+
+  android-app:
+    # Builds a fresh app that depends on the plugin, which is how users consume
+    # it, on the minimum supported Flutter, stable and beta. The example cannot
+    # cover this: its Android project follows a single Flutter template.
+    # Debug and release are both built because some failures only show up in
+    # release builds (resource verification against the plugin's compileSdk).
+    name: android-app (${{ matrix.flutter }})
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.flutter == 'beta' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        flutter: [minimum, stable, beta]
+    steps:
+      - uses: actions/checkout@v4
+
+      # The app template of older Flutter releases uses Gradle 7, which does
+      # not run on JDK 21. JDK 17 runs every template from the minimum to beta.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: ${{ matrix.flutter == 'beta' && 'beta' || 'stable' }}
+          flutter-version: ${{ matrix.flutter == 'minimum' && env.FLUTTER_MIN_VERSION || '' }}
+
+      - name: Create an app that depends on the plugin
+        run: |
+          flutter create --platforms=android --project-name plugin_app --org dev.espprovble.ci "$RUNNER_TEMP/app"
+          cd "$RUNNER_TEMP/app"
+          awk -v path="$GITHUB_WORKSPACE" '{ print } /^dependencies:/ { print "  esp_provisioning_ble:"; print "    path: " path }' pubspec.yaml > pubspec.yaml.new
+          mv pubspec.yaml.new pubspec.yaml
+          # Use the plugin from Dart too, so that its code is compiled in.
+          cat > lib/main.dart <<'DART'
+          import 'package:esp_provisioning_ble/esp_provisioning_ble.dart';
+          import 'package:flutter/widgets.dart';
+
+          void main() => runApp(Text('$EspProv', textDirection: TextDirection.ltr));
+          DART
+          rm -f test/widget_test.dart
+          flutter pub get
+
+      - name: Build debug APK
+        working-directory: ${{ runner.temp }}/app
+        run: flutter build apk --debug
+
+      - name: Build release APK
+        working-directory: ${{ runner.temp }}/app
+        run: flutter build apk --release
