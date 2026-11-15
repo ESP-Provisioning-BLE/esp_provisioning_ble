@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0-dev.1] - 2026-11-15
+
+This is the first pre-release of 2.0.0. It moves the package to protobuf 6, so it can be installed alongside packages that need a recent protobuf, and raises the minimum to Dart 3.7 and Flutter 3.29. It is a major version because the generated protobuf messages that some methods return or take change with protobuf 6; code that only calls the plugin's own methods should not need changes (see Migrating from 1.x). It includes everything in 1.2.1. Pub only installs a pre-release when your constraint asks for one, such as `^2.0.0-dev.1`. The 1.x line stays on protobuf 3 and keeps receiving fixes.
+
 ### Changed
 
 - **Breaking:** requires `protobuf` ^6.0.0 (was ^3.0.0), so the package can be installed alongside packages that need a recent protobuf, as long as their constraints allow protobuf 6 ([#53](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/issues/53)). The bundled bindings are regenerated with `protoc_plugin` 25.0.0; the bytes exchanged with the device do not change, which the wire-format tests check. Thanks to @devYoungyang for reporting the conflict, and to @daveols for first proposing the protobuf upgrade ([#21](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/pull/21)).
