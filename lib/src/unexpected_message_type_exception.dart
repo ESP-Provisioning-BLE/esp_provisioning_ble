@@ -2,9 +2,11 @@
 /// one the provisioning flow expects at that point.
 ///
 /// It is thrown by `EspProv.startScanResponse`, `EspProv.scanStatusResponse`
-/// and `EspProv.scanResultResponse` (and therefore by `EspProv.scan` and
-/// `EspProv.startScanWiFi`) when the decrypted scan payload carries a message
-/// type other than the expected response. Typical causes are a corrupted or
+/// and `EspProv.scanResultResponse` (and therefore by
+/// `EspProv.startScanRequest`, `EspProv.scanStatusRequest`,
+/// `EspProv.scanResultRequest`, `EspProv.scan` and `EspProv.startScanWiFi`)
+/// when the decrypted scan payload carries a message type other than the
+/// expected response. Typical causes are a corrupted or
 /// out-of-order BLE message, or a device running unexpected firmware.
 ///
 /// The exception implements [Exception], so existing `on Exception` and
