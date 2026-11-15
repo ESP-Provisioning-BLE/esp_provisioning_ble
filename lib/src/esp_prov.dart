@@ -12,9 +12,23 @@ import 'security.dart';
 import 'transport.dart';
 import 'unexpected_message_type_exception.dart';
 
+/// Result of [EspProv.establishSession].
 enum EstablishSessionStatus {
+  /// The session handshake finished and the device accepted it, so the other
+  /// [EspProv] requests can be sent.
   connected,
+
+  /// The transport reported that the device is not connected, before or
+  /// during the handshake, or after the handshake failed.
   disconnected,
+
+  /// The handshake failed while the device was still connected.
+  ///
+  /// With [Security1] this usually means that the proof of possession does
+  /// not match the one of the device. With [Security0] it means that the
+  /// device did not answer with a valid Security 0 response. It is also
+  /// returned for any other error raised during the handshake while the
+  /// device stays connected, such as a response that cannot be decoded.
   keymismatch,
 }
 
@@ -29,12 +43,58 @@ UnexpectedMessageTypeException _unexpectedScanMessage(
   );
 }
 
+/// Client for the provisioning service of an ESP32 device.
+///
+/// It implements the client side of Espressif's unified provisioning
+/// protocol: it builds the protobuf requests for the session (`prov-session`),
+/// Wi-Fi scan (`prov-scan`), Wi-Fi configuration (`prov-config`) and custom
+/// data (`custom-data`) endpoints, protects them with [security] and sends
+/// them through [transport].
+///
+/// The transport must already be connected to the device: [EspProv] never
+/// calls [ProvTransport.connect]. Call [establishSession] first and use the
+/// other requests only after it returns [EstablishSessionStatus.connected].
+///
+/// Unless a method says otherwise, errors thrown by [transport] or [security],
+/// and responses that cannot be decoded as the expected protobuf message,
+/// are not caught and reach the caller.
 class EspProv {
+  /// The transport that carries every request to the device.
   ProvTransport transport;
+
+  /// The security scheme that runs the session handshake and protects the
+  /// requests. It must match the security scheme of the device firmware.
   ProvSecurity security;
 
+  /// Creates a provisioning client that talks to the device through
+  /// [transport] using the security scheme [security].
   EspProv({required this.transport, required this.security});
 
+  /// Runs the session handshake of [security] with the device.
+  ///
+  /// It starts by passing an empty `SessionData` to
+  /// [ProvSecurity.securitySession], sends each request it returns to the
+  /// `prov-session` endpoint and passes the decoded response back, until
+  /// [ProvSecurity.securitySession] returns `null`. Before each round it
+  /// checks [ProvTransport.checkConnect].
+  ///
+  /// Returns:
+  ///
+  /// - [EstablishSessionStatus.connected] when the handshake finished;
+  /// - [EstablishSessionStatus.disconnected] when the device is not
+  ///   connected, or an error happened and the device is no longer
+  ///   connected;
+  /// - [EstablishSessionStatus.keymismatch] when an error happened while the
+  ///   device is still connected, including an empty response.
+  ///
+  /// It never throws: errors are turned into one of the statuses above.
+  ///
+  /// Once the session is established, calling it again returns
+  /// [EstablishSessionStatus.connected] without repeating the handshake, as
+  /// long as the transport is still connected. [Security0] and [Security1]
+  /// do not reset after a failed handshake, so to try again create a new
+  /// security object and assign it to [security] (or create a new
+  /// [EspProv]).
   Future<EstablishSessionStatus> establishSession() async {
     try {
       SessionData responseData = SessionData();
@@ -64,14 +124,34 @@ class EspProv {
     }
   }
 
+  /// Disconnects the device by calling [ProvTransport.disconnect].
+  ///
+  /// The result of [ProvTransport.disconnect] is ignored, and [security] is
+  /// left as it is.
   Future<void> dispose() async {
     await transport.disconnect();
   }
 
+  /// Asks the device to scan for Wi-Fi networks and returns the access
+  /// points it found.
+  ///
+  /// It is the same as [scan] with its default arguments: a blocking active
+  /// scan.
+  ///
+  /// Throws an [UnexpectedMessageTypeException] if the device answers a scan
+  /// request with a message of another type.
   Future<List<WifiAP>> startScanWiFi() async {
     return await scan();
   }
 
+  /// Decrypts and decodes [data], the device's response to a scan start
+  /// command.
+  ///
+  /// This is a building block of [startScanRequest]; most apps use [scan] or
+  /// [startScanWiFi] instead.
+  ///
+  /// Throws an [UnexpectedMessageTypeException] if the message is not a scan
+  /// start response (`TypeRespScanStart`).
   Future<WiFiScanPayload> startScanResponse(Uint8List data) async {
     var respPayload = WiFiScanPayload.fromBuffer(await security.decrypt(data));
     if (respPayload.msg != WiFiScanMsgType.TypeRespScanStart) {
@@ -81,6 +161,26 @@ class EspProv {
     return respPayload;
   }
 
+  /// Sends a scan start command to the `prov-scan` endpoint and returns the
+  /// decoded response.
+  ///
+  /// The arguments are passed to the device as they are. With ESP-IDF's
+  /// provisioning manager:
+  ///
+  /// - [blocking]: when `true`, the device answers only after the scan has
+  ///   finished; when `false`, it answers as soon as the scan has started.
+  /// - [passive]: when `true`, the device runs a passive scan instead of an
+  ///   active one.
+  /// - [groupChannels]: how many channels the device scans in one go
+  ///   (`0` scans all of them at once).
+  /// - [periodMs]: scan time on each channel, in milliseconds. The manager
+  ///   ignores it when the firmware is built with Bluetooth enabled.
+  ///
+  /// Use [scanStatusRequest] to know when the scan has finished and how many
+  /// results there are, and [scanResultRequest] to fetch them.
+  ///
+  /// Throws an [UnexpectedMessageTypeException] if the response is not a scan
+  /// start response.
   Future<WiFiScanPayload> startScanRequest(
       {bool blocking = true,
       bool passive = false,
@@ -100,6 +200,13 @@ class EspProv {
     return await startScanResponse(respData);
   }
 
+  /// Decrypts and decodes [data], the device's response to a scan status
+  /// command.
+  ///
+  /// This is a building block of [scanStatusRequest].
+  ///
+  /// Throws an [UnexpectedMessageTypeException] if the message is not a scan
+  /// status response (`TypeRespScanStatus`).
   Future<WiFiScanPayload> scanStatusResponse(Uint8List data) async {
     var respPayload = WiFiScanPayload.fromBuffer(await security.decrypt(data));
     if (respPayload.msg != WiFiScanMsgType.TypeRespScanStatus) {
@@ -109,6 +216,15 @@ class EspProv {
     return respPayload;
   }
 
+  /// Sends a scan status command to the `prov-scan` endpoint and returns the
+  /// decoded response.
+  ///
+  /// Its `respScanStatus` tells whether the scan has finished
+  /// (`scanFinished`) and how many access points the device has stored
+  /// (`resultCount`).
+  ///
+  /// Throws an [UnexpectedMessageTypeException] if the response is not a scan
+  /// status response.
   Future<WiFiScanPayload> scanStatusRequest() async {
     WiFiScanPayload payload = WiFiScanPayload();
     payload.msg = WiFiScanMsgType.TypeCmdScanStatus;
@@ -117,6 +233,15 @@ class EspProv {
     return await scanStatusResponse(respData);
   }
 
+  /// Asks the `prov-scan` endpoint for [count] scan results starting at
+  /// [startIndex] and returns them as [WifiAP] objects.
+  ///
+  /// The indices refer to the results stored on the device; see
+  /// [scanStatusRequest] for how many there are. The results are converted
+  /// as described in [scanResultResponse].
+  ///
+  /// Throws an [UnexpectedMessageTypeException] if the response is not a scan
+  /// result response.
   Future<List<WifiAP>> scanResultRequest(
       {int startIndex = 0, int count = 0}) async {
     WiFiScanPayload payload = WiFiScanPayload();
@@ -132,6 +257,20 @@ class EspProv {
     return await scanResultResponse(respData);
   }
 
+  /// Decrypts and decodes [data], the device's response to a scan result
+  /// command, and converts each entry into a [WifiAP].
+  ///
+  /// For each entry, [WifiAP.ssid] is the SSID decoded as UTF-8,
+  /// [WifiAP.rssi] the reported signal strength, [WifiAP.bssid] the BSSID in
+  /// `aa:bb:cc:dd:ee:ff` form (or `null` if the device did not send exactly
+  /// 6 bytes) and [WifiAP.private] whether the auth mode needs credentials.
+  /// [WifiAP.active] keeps its default, `false`.
+  ///
+  /// This is a building block of [scanResultRequest].
+  ///
+  /// Throws an [UnexpectedMessageTypeException] if the message is not a scan
+  /// result response (`TypeRespScanResult`), and a [FormatException] if an
+  /// SSID is not valid UTF-8.
   Future<List<WifiAP>> scanResultResponse(Uint8List data) async {
     var respPayload = WiFiScanPayload.fromBuffer(await security.decrypt(data));
     if (respPayload.msg != WiFiScanMsgType.TypeRespScanResult) {
@@ -153,6 +292,19 @@ class EspProv {
     return ret;
   }
 
+  /// Runs a whole Wi-Fi scan on the device and returns the access points it
+  /// found.
+  ///
+  /// It sends [startScanRequest] with the given arguments, reads the number
+  /// of results with [scanStatusRequest] and fetches them with
+  /// [scanResultRequest], at most 4 per request.
+  ///
+  /// It does not wait for the scan to finish: with [blocking] set to `false`
+  /// the device answers as soon as the scan has started, so the list may be
+  /// empty or incomplete.
+  ///
+  /// Throws an [UnexpectedMessageTypeException] if the device answers any of
+  /// these requests with a message of another type.
   Future<List<WifiAP>> scan(
       {bool blocking = true,
       bool passive = false,
@@ -180,6 +332,23 @@ class EspProv {
     return ret;
   }
 
+  /// Sends the Wi-Fi credentials to the `prov-config` endpoint.
+  ///
+  /// [ssid] and [password] are sent UTF-8 encoded. ESP-IDF's provisioning
+  /// manager accepts an SSID of up to 32 bytes and a password of up to 63
+  /// bytes. The device stores the credentials but does not use them until
+  /// [applyWifiConfig] is called.
+  ///
+  /// [bssid], in `aa:bb:cc:dd:ee:ff` form, is sent as the BSSID of the access
+  /// point to join. Whether the device uses it depends on its firmware:
+  /// ESP-IDF's provisioning manager (as of v5.4) checks its length but
+  /// connects by SSID.
+  ///
+  /// Returns `false` if the device answers with an error status, for example
+  /// when the SSID or the password is too long, and `true` otherwise.
+  ///
+  /// Throws a [FormatException], before anything is sent, if [bssid] is not
+  /// six colon-separated pairs of hexadecimal digits.
   Future<bool> sendWifiConfig(
       {required String ssid, required String password, String? bssid}) async {
     var payload = WiFiConfigPayload();
@@ -201,6 +370,13 @@ class EspProv {
     return (respPayload.respSetConfig.status == Status.Success);
   }
 
+  /// Tells the device, through the `prov-config` endpoint, to connect to the
+  /// network sent with [sendWifiConfig].
+  ///
+  /// Returns `false` if the device answers with an error status, for example
+  /// when no credentials were sent first, and `true` otherwise. `true` only
+  /// means that the device started connecting: use [getStatus] to follow
+  /// the result.
   Future<bool> applyWifiConfig() async {
     var payload = WiFiConfigPayload();
     payload.msg = WiFiConfigMsgType.TypeCmdApplyConfig;
@@ -211,6 +387,24 @@ class EspProv {
     return (respPayload.respApplyConfig.status == Status.Success);
   }
 
+  /// Asks the `prov-config` endpoint for the state of the device's Wi-Fi
+  /// connection.
+  ///
+  /// The returned [ConnectionStatus] has:
+  ///
+  /// - [WifiConnectionState.Connected] and the device's IPv4 address in
+  ///   [ConnectionStatus.deviceIp];
+  /// - [WifiConnectionState.Connecting] or [WifiConnectionState.Disconnected]
+  ///   with no other data;
+  /// - [WifiConnectionState.ConnectionFailed] with
+  ///   [WifiConnectFailedReason.NetworkNotFound] if the device reports that
+  ///   the network was not found, or [WifiConnectFailedReason.AuthError]
+  ///   otherwise.
+  ///
+  /// Poll it after [applyWifiConfig] until the state is no longer
+  /// [WifiConnectionState.Connecting]. ESP-IDF's provisioning manager stops
+  /// the provisioning service once it has reported
+  /// [WifiConnectionState.Connected], so later requests may fail.
   Future<ConnectionStatus> getStatus() async {
     var payload = WiFiConfigPayload();
     payload.msg = WiFiConfigMsgType.TypeCmdGetStatus;
@@ -251,6 +445,21 @@ class EspProv {
     );
   }
 
+  /// Sends [data] to the `custom-data` endpoint and returns what the device
+  /// answers.
+  ///
+  /// [data] is split into chunks of at most [packageSize] bytes, which must
+  /// be greater than zero. Each chunk is encrypted with [security] (with
+  /// [Security0] it travels in the clear) and sent as a separate request;
+  /// the non-empty responses are decrypted and concatenated in order. An
+  /// empty [data] sends nothing and returns an empty [Uint8List].
+  ///
+  /// The firmware must provide an endpoint named `custom-data`, which with
+  /// ESP-IDF's provisioning manager means creating it with
+  /// `wifi_prov_mgr_endpoint_create("custom-data")` and registering a handler
+  /// for it. Send custom data after [establishSession] and before the Wi-Fi
+  /// configuration completes, because the manager removes all endpoints once
+  /// provisioning ends.
   Future<Uint8List> sendReceiveCustomData(Uint8List data,
       {int packageSize = 256}) async {
     var remainingData = data.length;
