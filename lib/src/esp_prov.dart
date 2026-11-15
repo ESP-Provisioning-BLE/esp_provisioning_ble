@@ -341,8 +341,10 @@ class EspProv {
   ///
   /// [bssid], in `aa:bb:cc:dd:ee:ff` form, is sent as the BSSID of the access
   /// point to join. Whether the device uses it depends on its firmware:
-  /// ESP-IDF's provisioning manager (as of v5.4) checks its length but
-  /// connects by SSID.
+  /// ESP-IDF's stock provisioning manager (checked on v5.4 and v5.5)
+  /// validates its length and then drops it, so the device joins the network
+  /// by SSID. Only a firmware that applies the BSSID itself joins that
+  /// specific access point.
   ///
   /// Returns `false` if the device answers with an error status, for example
   /// when the SSID or the password is too long, and `true` otherwise.

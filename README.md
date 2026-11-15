@@ -16,7 +16,7 @@ It is transport-agnostic: you implement a thin `ProvTransport` with the BLE pack
 - Secure session establishment with Security 1 (Curve25519 key exchange + AES-CTR) using a Proof-of-Possession (PoP).
 - Unencrypted sessions with Security 0, for devices provisioned without security.
 - Scan the Wi-Fi networks visible to the device, with SSID, RSSI, BSSID and whether the network needs credentials.
-- Send Wi-Fi credentials and apply them, optionally targeting a specific access point by BSSID.
+- Send Wi-Fi credentials and apply them, optionally with the BSSID of a specific access point (used only if the device firmware applies it).
 - Query the provisioning status, including the assigned device IP and the failure reason.
 - Exchange arbitrary custom data over the provisioning session.
 - Transport-agnostic: bring your own BLE stack by implementing `ProvTransport`.
@@ -136,11 +136,13 @@ If the device answers a scan request with a message of an unexpected type (for e
 
 ### Send and apply the Wi-Fi config
 
-`sendWifiConfig` delivers the credentials and returns whether the device accepted them; `applyWifiConfig` then tells the device to connect. Pass an optional `bssid` to target a specific access point.
+`sendWifiConfig` delivers the credentials and returns whether the device accepted them; `applyWifiConfig` then tells the device to connect. Pass an optional `bssid` to ask for a specific access point.
+
+The `bssid` is always sent, but whether the device uses it depends on its firmware. ESP-IDF's stock provisioning manager (checked on v5.4 and v5.5) validates its length and then drops it, so the device joins the network by SSID and the Wi-Fi driver picks the access point. To join a specific access point, the firmware has to apply the BSSID itself, as the [test firmware](https://github.com/ESP-Provisioning-BLE/esp_provisioning_test_firmware) does with `CONFIG_TESTFW_APPLY_BSSID`.
 
 ```dart
 await prov.sendWifiConfig(ssid: ssid, password: password);
-// Or target a specific access point:
+// Or ask for a specific access point (only firmware that applies the BSSID uses it):
 // await prov.sendWifiConfig(ssid: ssid, password: password, bssid: 'aa:bb:cc:dd:ee:ff');
 await prov.applyWifiConfig();
 ```
