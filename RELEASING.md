@@ -51,7 +51,10 @@ On pub.dev, a pre-release never becomes the latest version, and neither does a 1
      -F "environment_ids[]=$ENV_ID" -f state=approved -f comment="Publish vX.Y.Z"
    ```
 5. The workflow verifies the tag matches the pubspec version and publishes over OIDC. Confirm the new version on [pub.dev](https://pub.dev/packages/esp_provisioning_ble).
-6. **(Optional)** Create a GitHub Release from the tag, using the CHANGELOG entry as the notes.
+6. **Create the GitHub Release** from the tag, using the CHANGELOG entry as the notes. For a 1.x release published after 2.0.0, add `--latest=false`, so it does not replace 2.x as the repository's latest release:
+   ```sh
+   gh release create vX.Y.Z --verify-tag --title "X.Y.Z" --notes-file notes.md
+   ```
 
 ## Pre-release steps
 
@@ -63,6 +66,15 @@ On pub.dev, a pre-release never becomes the latest version, and neither does a 1
    git push origin v2.0.0-dev.N
    ```
 4. **Approve the deployment**, as for a stable release.
+5. **Check pub.dev**: the pre-release is listed, and the latest version is still the last stable one:
+   ```sh
+   curl -s https://pub.dev/api/packages/esp_provisioning_ble | jq -r .latest.version
+   ```
+6. **Create the GitHub Release** marked as a pre-release, so it does not become the repository's latest release:
+   ```sh
+   gh release create v2.0.0-dev.N --verify-tag --prerelease --latest=false --title "2.0.0-dev.N" --notes-file notes.md
+   ```
+7. **(Optional)** Announce it in the Announcements category of the organization's Discussions, linking the GitHub Release. Before posting, open the links that point into the tag (such as `blob/v2.0.0-dev.N/CHANGELOG.md#migrating-from-1x`) and check that they reach the right section.
 
 ## Notes
 
