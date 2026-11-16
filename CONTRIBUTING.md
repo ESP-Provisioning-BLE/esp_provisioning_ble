@@ -25,6 +25,7 @@ flutter pub get
 
 - Open an issue first for anything large or potentially breaking, so the approach can be agreed before you invest time.
 - Create a branch named after the change type: `feat/...`, `fix/...`, `docs/...`, `chore/...`, `test/...`. Maintainers with push access branch directly in this repository; external contributors fork and open a pull request from their fork.
+- Open the pull request against the branch of the line it belongs to. Fixes and backward-compatible changes for 1.x go to `main`. Changes that break the public API go to `release/v2.0.0`, where 2.0 is being developed. If you are not sure, ask in the issue first.
 - Keep each pull request focused on a single change.
 - Rebase is disabled on this repository; pull requests land as a merge commit or a squash.
 
