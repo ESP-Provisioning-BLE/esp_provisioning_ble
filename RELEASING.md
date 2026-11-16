@@ -44,7 +44,12 @@ On pub.dev, a pre-release never becomes the latest version, and neither does a 1
    git tag -s vX.Y.Z -m "esp_provisioning_ble X.Y.Z"
    git push origin vX.Y.Z
    ```
-4. **Approve the deployment**: the publish workflow starts and pauses on the `pub.dev` environment. Approve it from the workflow run.
+4. **Approve the deployment**: the publish workflow starts and pauses on the `pub.dev` environment. Approve it from the workflow run. If the web or the mobile app cannot show the approval, approve it with the GitHub CLI, using the ID of the paused run (`gh run list --workflow publish.yml --limit 1` shows it):
+   ```sh
+   ENV_ID=$(gh api repos/ESP-Provisioning-BLE/esp_provisioning_ble/environments/pub.dev --jq .id)
+   gh api -X POST repos/ESP-Provisioning-BLE/esp_provisioning_ble/actions/runs/<run-id>/pending_deployments \
+     -F "environment_ids[]=$ENV_ID" -f state=approved -f comment="Publish vX.Y.Z"
+   ```
 5. The workflow verifies the tag matches the pubspec version and publishes over OIDC. Confirm the new version on [pub.dev](https://pub.dev/packages/esp_provisioning_ble).
 6. **(Optional)** Create a GitHub Release from the tag, using the CHANGELOG entry as the notes.
 
