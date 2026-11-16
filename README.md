@@ -11,6 +11,9 @@ A Flutter plugin that simplifies provisioning ESP32 modules over Bluetooth Low E
 
 It is transport-agnostic: you implement a thin `ProvTransport` with the BLE package of your choice (the [example](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/main/example) uses [flutter_blue_plus](https://pub.dev/packages/flutter_blue_plus)), and the plugin handles the session handshake, Wi-Fi scanning, credential delivery and status reporting on top of Espressif's [protocomm](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/provisioning/protocomm.html) protocol.
 
+> [!IMPORTANT]
+> Version 2.0 is in development on the [`release/v2.0.0`](https://github.com/ESP-Provisioning-BLE/esp_provisioning_ble/tree/release/v2.0.0) branch and is published as pre-releases, starting with `2.0.0-dev.1`. It moves to `protobuf ^6.0.0` and requires Dart 3.7 and Flutter 3.29 or later. The 1.x line, released from `main`, is still the stable version and keeps receiving fixes. Read the [announcement](https://github.com/orgs/ESP-Provisioning-BLE/discussions/75) for what changes and how to try the pre-release.
+
 ## Features
 
 - Secure session establishment with Security 1 (Curve25519 key exchange + AES-CTR) using a Proof-of-Possession (PoP).
