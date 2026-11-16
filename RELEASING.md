@@ -36,9 +36,9 @@ On pub.dev, a pre-release never becomes the latest version, and neither does a 1
    - In `CHANGELOG.md`, rename `## [Unreleased]` to `## [X.Y.Z] - <date>` and add a fresh empty `## [Unreleased]` above it.
    - Run `dart pub publish --dry-run` and confirm no warnings.
 2. **Merge** the release PR to `main`.
-3. **Tag the release** (administrators only), from `main`, matching the pubspec version exactly:
+3. **Tag the release** (administrators only), from `main`, matching the pubspec version exactly. Release tags are annotated and signed:
    ```sh
-   git tag vX.Y.Z
+   git tag -s vX.Y.Z -m "esp_provisioning_ble X.Y.Z"
    git push origin vX.Y.Z
    ```
 4. **Approve the deployment**: the publish workflow starts and pauses on the `pub.dev` environment. Approve it from the workflow run.
@@ -51,7 +51,7 @@ On pub.dev, a pre-release never becomes the latest version, and neither does a 1
 2. **Merge** it into `release/v2.0.0`.
 3. **Tag** the commit that the merge left on `release/v2.0.0` (administrators only):
    ```sh
-   git tag v2.0.0-dev.N
+   git tag -s v2.0.0-dev.N -m "esp_provisioning_ble 2.0.0-dev.N"
    git push origin v2.0.0-dev.N
    ```
 4. **Approve the deployment**, as for a stable release.
