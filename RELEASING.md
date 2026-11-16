@@ -23,6 +23,8 @@ The order of branches and tags is:
 
 1. Create `release/v2.0.0` from `main`, right after a 1.x release tag (`vX.Y.Z`).
 2. Keep releasing 1.x from `main` as needed. Everything that lands on `main` is then merged or cherry-picked into `release/v2.0.0`, so 2.0 does not lose it.
+   - `release/v2.0.0` uses the Dart 3.7 formatter style and `main` still uses the older one, so code merged from `main` arrives unformatted or conflicts on formatting. Run `dart format lib test` on the merge itself and include the result in the merge commit.
+   - `CHANGELOG.md` conflicts too, because both branches add sections at the top. Keep the 2.0 sections (`## [Unreleased]` and the `## [2.0.0-dev.N]` ones) first, and put the 1.x section that comes from `main` below them, above the previous 1.x release.
 3. Publish pre-releases from `release/v2.0.0`, following the pre-release steps below. Each one needs its own version and tag; a published version can never be reused.
 4. To release 2.0.0, merge `release/v2.0.0` into `main` through a PR, set the version to `2.0.0`, and tag `v2.0.0` on `main` as a normal stable release. Before deleting `release/v2.0.0` afterwards, exclude it from the "Protect main" ruleset: the ruleset blocks deleting it and has no bypass.
 5. If 1.x needs a release after 2.0.0, create `release/v1.x` from the last `v1.*` tag and publish from it. Its copy of `publish.yml` must allow stable tags on that branch (`STABLE_BRANCHES` in the `branch-check` job): GitHub runs the workflow as it is in the tagged commit, so the change only affects tags on that branch.
